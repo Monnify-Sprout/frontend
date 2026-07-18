@@ -77,7 +77,36 @@ export const invoiceDetailResponseSchema = z.object({
   payment: paymentSchema.nullable(),
 });
 
+// Mirrors backend src/modules/invoices/public.routes.ts: the safe buyer-facing
+// subset. Payment channels are null whenever the invoice is not payable, and
+// payment (when paid) carries no settlement/commission figures.
+export const publicInvoiceSchema = z.object({
+  invoice_reference: z.string(),
+  business_name: z.string(),
+  customer_name: z.string(),
+  description: z.string().nullable(),
+  amount: z.string(),
+  currency: z.string(),
+  due_date: z.string().nullable(),
+  status: invoiceStatusSchema,
+  virtual_account_number: z.string().nullable(),
+  checkout_url: z.string().nullable(),
+  created_at: z.string(),
+});
+
+export const publicInvoiceResponseSchema = z.object({
+  invoice: publicInvoiceSchema,
+  payment: z
+    .object({
+      amount: z.string(),
+      payment_method: z.string().nullable(),
+      paid_at: z.string().nullable(),
+    })
+    .nullable(),
+});
+
 export type Invoice = z.infer<typeof invoiceSchema>;
+export type PublicInvoice = z.infer<typeof publicInvoiceSchema>;
 export type Payment = z.infer<typeof paymentSchema>;
 export type InvoiceStatus = z.infer<typeof invoiceStatusSchema>;
 export type CreateInvoiceInput = z.infer<typeof createInvoiceInputSchema>;

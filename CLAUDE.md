@@ -76,4 +76,16 @@ Phase 6 (verification + invoice UI) is **complete and verified in-browser**:
 - Nav highlights the active path; Invoices enabled on desktop + mobile bars.
 - Shared helpers: `src/lib/format.ts` (naira, dates, status styles).
 
-Next: Phase 7 - public invoice payment page (/pay/[reference]).
+Phase 7 (public payment page) is **complete and verified in-browser**:
+- `/pay/[reference]` (public chrome, no session): amount, business name,
+  description, due date, virtual account + copy, "Pay with card" checkout link.
+- Status comes ONLY from polling `GET /api/public/invoices/:reference` every 4s
+  while pending (`publicInvoiceResponseSchema` mirror) - redirect params are
+  never trusted. `refetchIntervalInBackground: true` and
+  `refetchOnWindowFocus: true` are load-bearing: buyers background the tab for
+  their banking app, and React Query pauses interval refetches on hidden tabs
+  by default.
+- Terminal states verified: paid (flips live on webhook, channels withdrawn by
+  the backend), expired (server-side lazy expiry), cancelled, not-found.
+
+Next: Phase 8 - analytics dashboard + connect-account UI.
