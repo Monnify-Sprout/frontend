@@ -3,7 +3,7 @@ import axios from 'axios';
 import { apiErrorSchema } from '@/lib/schemas';
 import { useAuthStore } from '@/store/auth';
 
-// Same-origin by default — next.config.ts rewrites /api/* to the backend, so no
+// Same-origin by default - next.config.ts rewrites /api/* to the backend, so no
 // CORS is involved. Point NEXT_PUBLIC_API_BASE_URL elsewhere to skip the proxy.
 export const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_BASE_URL ?? '',
@@ -21,7 +21,7 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (axios.isAxiosError(error) && error.response?.status === 401) {
-      // Expired/invalid session — clear it; route guards handle the redirect.
+      // Expired/invalid session - clear it; route guards handle the redirect.
       useAuthStore.getState().clear();
     }
     return Promise.reject(error);

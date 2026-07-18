@@ -1,7 +1,16 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { BadgeCheck, Clock, ShieldAlert } from 'lucide-react';
+import {
+  BadgeCheck,
+  CalendarDays,
+  ChartNoAxesColumn,
+  Clock,
+  Landmark,
+  ReceiptText,
+  ShieldAlert,
+  ShieldCheck,
+} from 'lucide-react';
 
 import {
   Card,
@@ -11,7 +20,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { api } from '@/lib/api';
-import { meResponseSchema, type Merchant } from '@/lib/schemas';
+import {
+  listInvoicesResponseSchema,
+  meResponseSchema,
+  type Merchant,
+} from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
@@ -25,7 +38,7 @@ function StatusBadge({ merchant }: { merchant: Merchant }) {
     pending: {
       icon: Clock,
       text: 'Verification pending',
-      className: 'bg-muted text-muted-foreground',
+      className: 'bg-amber-100 text-amber-700',
     },
     failed: {
       icon: ShieldAlert,
@@ -47,6 +60,41 @@ function StatusBadge({ merchant }: { merchant: Merchant }) {
   );
 }
 
+// Stat card in harmony-admin's style: a soft tinted icon chip with a saturated
+// icon, small muted title, large value.
+function StatCard({
+  icon: Icon,
+  chipClass,
+  title,
+  value,
+  valueClass,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  chipClass: string;
+  title: string;
+  value: string;
+  valueClass?: string;
+}) {
+  return (
+    <Card className="gap-3 py-5">
+      <CardHeader className="gap-3">
+        <span
+          className={cn(
+            'flex size-10 items-center justify-center rounded-lg',
+            chipClass,
+          )}
+        >
+          <Icon className="size-5" />
+        </span>
+        <CardDescription>{title}</CardDescription>
+        <CardTitle className={cn('text-2xl font-semibold', valueClass)}>
+          {value}
+        </CardTitle>
+      </CardHeader>
+    </Card>
+  );
+}
+
 export default function DashboardPage() {
   const { merchant: cached, setMerchant } = useAuthStore();
 
@@ -62,10 +110,23 @@ export default function DashboardPage() {
     },
   });
 
+  const invoices = useQuery({
+    queryKey: ['invoices'],
+    queryFn: async () => {
+      const res = await api.get('/api/invoices');
+      return listInvoicesResponseSchema.parse(res.data).invoices;
+    },
+  });
+
   const merchant = me.data ?? cached;
   if (!merchant) return null;
 
   const firstName = merchant.owner_name.split(' ')[0];
+  const memberSince = new Date(merchant.created_at).toLocaleDateString('en-NG', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 
   return (
     <div className="flex flex-col gap-6">
@@ -88,48 +149,57 @@ export default function DashboardPage() {
             <CardDescription>
               {merchant.verification_status === 'failed'
                 ? (merchant.verification_reason ??
-                  'Your identity check failed — our team will review it.')
+                  'Your identity check failed. Our team will review it.')
                 : 'Verify your BVN or NIN to activate payments. The verification flow arrives in the next phase of the build.'}
             </CardDescription>
           </CardHeader>
         </Card>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardDescription>Account status</CardDescription>
-            <CardTitle className="text-xl capitalize">{merchant.status}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Sub-account</CardDescription>
-            <CardTitle className="text-xl">
-              {merchant.sub_account_code ?? '—'}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardDescription>Member since</CardDescription>
-            <CardTitle className="text-xl">
-              {new Date(merchant.created_at).toLocaleDateString('en-NG', {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-              })}
-            </CardTitle>
-          </CardHeader>
-        </Card>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          icon={ShieldCheck}
+          chipClass={
+            merchant.status === 'active'
+              ? 'bg-brand/10 text-brand'
+              : 'bg-amber-100 text-amber-600'
+          }
+          title="Account status"
+          value={merchant.status}
+          valueClass="capitalize"
+        />
+        <StatCard
+          icon={ReceiptText}
+          chipClass="bg-blue-100 text-blue-600"
+          title="Invoices"
+          value={invoices.isPending ? '…' : String(invoices.data?.length ?? 0)}
+        />
+        <StatCard
+          icon={Landmark}
+          chipClass="bg-violet-100 text-violet-600"
+          title="Sub-account"
+          value={merchant.sub_account_code ?? 'Not yet assigned'}
+          valueClass={merchant.sub_account_code ? 'text-lg break-all' : 'text-lg'}
+        />
+        <StatCard
+          icon={CalendarDays}
+          chipClass="bg-rose-100 text-rose-600"
+          title="Member since"
+          value={memberSince}
+          valueClass="text-lg"
+        />
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="gap-3">
+          <span className="flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
+            <ChartNoAxesColumn className="size-5" />
+          </span>
           <CardTitle>Invoices &amp; analytics</CardTitle>
           <CardDescription>
-            Invoice creation, payment tracking and your sales analytics land here
-            in the next build phases — the backend for all of it is already live.
+            Invoice creation, payment tracking and your sales analytics land
+            here in the next build phases. The backend for all of it is already
+            live.
           </CardDescription>
         </CardHeader>
         <CardContent>

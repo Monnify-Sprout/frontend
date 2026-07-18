@@ -13,8 +13,8 @@ export default function Home() {
           Get paid. Understand your sales.
         </h1>
         <p className="text-base leading-7 text-muted-foreground">
-          Invoicing and analytics for every Nigerian merchant — verified by BVN
-          or NIN, settled through Monnify.
+          Invoicing and analytics for every Nigerian merchant, verified by BVN
+          or NIN and settled through Monnify.
         </p>
       </div>
 

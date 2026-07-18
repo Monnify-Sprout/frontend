@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Mirrors backend src/modules/analytics/analytics.service.ts — the shape is
+// Mirrors backend src/modules/analytics/analytics.service.ts - the shape is
 // identical for both scopes (merchant and connected account) by design.
 
 const bucketSchema = z.object({

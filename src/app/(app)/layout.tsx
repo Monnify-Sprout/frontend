@@ -13,18 +13,18 @@ import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/auth-guard';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 const NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, ready: true },
   { label: 'Invoices', href: '/invoices', icon: ReceiptText, ready: false },
   { label: 'Analytics', href: '/analytics', icon: ChartNoAxesColumn, ready: false },
-  { label: 'Connected accounts', href: '/connected', icon: Link2, ready: false },
+  { label: 'Connected', href: '/connected', icon: Link2, ready: false },
 ] as const;
 
-// Authenticated dashboard chrome — deliberately separate from the public
+// Authenticated dashboard chrome, deliberately separate from the public
 // invoice-payment and auth layouts (build plan Phase 5: no shared chrome).
+// Desktop gets a sidebar; mobile keeps navigation via a bottom tab bar.
 export default function AppLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
@@ -46,10 +46,7 @@ export default function AppLayout({
                 <Link
                   key={href}
                   href={href}
-                  className={cn(
-                    'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    'bg-brand/10 text-brand',
-                  )}
+                  className="flex items-center gap-2.5 rounded-lg bg-brand/10 px-3 py-2 text-sm font-medium text-brand transition-colors"
                 >
                   <Icon className="size-4" />
                   {label}
@@ -62,7 +59,7 @@ export default function AppLayout({
                 >
                   <Icon className="size-4" />
                   {label}
-                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide">
+                  <span className="ml-auto rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium tracking-wide uppercase">
                     soon
                   </span>
                 </span>
@@ -96,11 +93,36 @@ export default function AppLayout({
               Log out
             </Button>
           </header>
-          <main className="flex flex-1 flex-col bg-muted/30 p-4 md:p-6">
+          <main className="flex flex-1 flex-col bg-muted/30 p-4 pb-24 md:p-6 md:pb-6">
             {children}
           </main>
         </div>
       </div>
+
+      {/* Mobile bottom tab bar: keeps navigation available below md. */}
+      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t bg-background/95 backdrop-blur-sm md:hidden">
+        {NAV.map(({ label, href, icon: Icon, ready }) =>
+          ready ? (
+            <Link
+              key={href}
+              href={href}
+              className="flex flex-1 flex-col items-center gap-1 py-2.5 text-brand"
+            >
+              <Icon className="size-5" />
+              <span className="text-[10px] font-medium">{label}</span>
+            </Link>
+          ) : (
+            <span
+              key={href}
+              aria-disabled
+              className="flex flex-1 cursor-default flex-col items-center gap-1 py-2.5 text-muted-foreground/60"
+            >
+              <Icon className="size-5" />
+              <span className="text-[10px] font-medium">{label}</span>
+            </span>
+          ),
+        )}
+      </nav>
     </AuthGuard>
   );
 }

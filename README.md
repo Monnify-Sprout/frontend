@@ -1,4 +1,4 @@
-# Sprout — Frontend
+# Sprout - Frontend
 
 Next.js (App Router) + TypeScript app for Sprout (APIConf Lagos x Monnify Developer
 Challenge). See `CLAUDE.md` and `../Sprout_Claude_Code_Build_Plan_v2.md` for the full

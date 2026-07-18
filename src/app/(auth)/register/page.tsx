@@ -45,7 +45,7 @@ export default function RegisterPage() {
     mutationFn: async (input: RegisterInput) => {
       const created = await api.post('/api/auth/register', input);
       registerResponseSchema.parse(created.data);
-      // Registration doesn't return a token — sign straight in.
+      // Registration doesn't return a token - sign straight in.
       const logged = await api.post('/api/auth/login', {
         email: input.email,
         password: input.password,

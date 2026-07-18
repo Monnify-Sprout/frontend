@@ -25,7 +25,7 @@ export default function LoginPage() {
   const { token, hydrated, setSession } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
-  // Already signed in — go straight to the dashboard.
+  // Already signed in - go straight to the dashboard.
   useEffect(() => {
     if (hydrated && token) router.replace('/dashboard');
   }, [hydrated, token, router]);

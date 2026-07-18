@@ -1,7 +1,7 @@
 import { Logo } from '@/components/logo';
 
 // Public invoice-payment chrome: what a BUYER sees when a merchant shares a
-// payment link. Deliberately separate from the dashboard layout — no nav, no
+// payment link. Deliberately separate from the dashboard layout - no nav, no
 // session, just the invoice (build plan Phase 5: no shared chrome).
 export default function PayLayout({
   children,

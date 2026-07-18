@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { Logo } from '@/components/logo';
 
 // Split auth chrome (pattern ported from harmony-admin's (auth) layout): a huge
-// brand panel on the left — gradient bg, small logo top-left, centered mark +
-// tagline — and the form on the right. Panel hides below lg; a compact logo
+// brand panel on the left - gradient bg, small logo top-left, centered mark +
+// tagline - and the form on the right. Panel hides below lg; a compact logo
 // header takes over on mobile.
 export default function AuthLayout({
   children,
@@ -39,8 +39,8 @@ export default function AuthLayout({
             Get paid. Understand your sales.
           </h2>
           <p className="text-sm leading-6 text-white/80">
-            Invoicing and analytics for every Nigerian merchant — verified by
-            BVN or NIN, settled through Monnify.
+            Invoicing and analytics for every Nigerian merchant, verified by
+            BVN or NIN and settled through Monnify.
           </p>
         </div>
       </div>

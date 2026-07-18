@@ -2,9 +2,9 @@ import { z } from 'zod';
 
 // Shared primitives for the schema layer. Every backend request/response shape
 // is mirrored here (build plan Phase 5) and used for BOTH react-hook-form
-// validation and React Query response parsing — one source of truth, no `any`.
+// validation and React Query response parsing - one source of truth, no `any`.
 
-// Version-agnostic email check — matches the backend's refine exactly.
+// Version-agnostic email check - matches the backend's refine exactly.
 export const emailSchema = z
   .string()
   .trim()

@@ -13,7 +13,7 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: 'Sprout',
   description:
-    'Get paid and understand your sales — invoicing and analytics for every Nigerian merchant.',
+    'Get paid and understand your sales. Invoicing and analytics for every Nigerian merchant.',
 };
 
 import { QueryProvider } from '@/lib/query';
