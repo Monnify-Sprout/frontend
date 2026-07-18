@@ -1,5 +1,16 @@
 import type { NextConfig } from 'next';
 
-const nextConfig: NextConfig = {/* config options here */};
+const nextConfig: NextConfig = {
+  // Proxy API calls to the backend so the browser talks same-origin (no CORS).
+  // Override the target with API_PROXY_TARGET when the backend isn't local.
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${process.env.API_PROXY_TARGET ?? 'http://localhost:4000'}/api/:path*`,
+      },
+    ];
+  },
+};
 
 export default nextConfig;

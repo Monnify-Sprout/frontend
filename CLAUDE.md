@@ -48,5 +48,21 @@ Phase 4's shared endpoint. Build one component parameterised by context, not two
 
 ## Current phase
 
-Phase 0 (scaffolding) complete. Frontend work resumes at Phase 5 once backend
-phases 1–4 are done.
+Phase 5 (frontend foundation) **complete and verified in the browser** against the
+live backend (register → dashboard, refresh persistence, logout redirect, login).
+
+- **Three separate chromes** (no shared layout): `(auth)` centered card,
+  `(app)` dashboard shell (sidebar + topbar + `AuthGuard`), and `/pay` public
+  invoice layout for buyers.
+- **Schemas**: every backend request/response shape is mirrored in
+  `src/lib/schemas/` (zero `any`) and used for BOTH react-hook-form validation
+  (zodResolver) and React Query response parsing (`schema.parse`).
+- **Session**: Zustand store (`src/store/auth.ts`) with `persist` → localStorage
+  key `sprout-auth`; `hydrated` flag gates the AuthGuard so refreshes don't
+  bounce to /login. Axios reads the token via `getState()`; a 401 clears the
+  session and the guard redirects.
+- **API routing**: same-origin `/api/*` is proxied to the backend by
+  `next.config.ts` rewrites (backend has no CORS — keep it that way).
+- Base UI note: `Button render={<Link/>}` needs `nativeButton={false}`.
+
+Next: Phase 6 — onboarding/verification UI + invoice creation UI.

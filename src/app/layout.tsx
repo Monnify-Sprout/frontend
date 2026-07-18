@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     'Get paid and understand your sales — invoicing and analytics for every Nigerian merchant.',
 };
 
+import { QueryProvider } from '@/lib/query';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -23,7 +25,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${poppins.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        <QueryProvider>{children}</QueryProvider>
+      </body>
     </html>
   );
 }
