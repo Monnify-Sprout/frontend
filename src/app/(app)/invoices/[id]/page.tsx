@@ -15,7 +15,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { api } from '@/lib/api';
-import { formatDate, formatNaira, INVOICE_STATUS_STYLES } from '@/lib/format';
+import {
+  customerLabel,
+  formatDate,
+  formatDateTime,
+  formatNaira,
+  INVOICE_STATUS_STYLES,
+} from '@/lib/format';
 import { invoiceDetailResponseSchema } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 
@@ -83,8 +89,8 @@ export default function InvoiceDetailPage({
                     {formatNaira(invoice.amount)}
                   </CardTitle>
                   <CardDescription>
-                    {invoice.customer_name}
-                    {invoice.description ? ` · ${invoice.description}` : ''}
+                    {customerLabel(invoice)}
+                    {invoice.item ? ` · ${invoice.item}` : ''}
                   </CardDescription>
                 </div>
                 <span
@@ -100,8 +106,22 @@ export default function InvoiceDetailPage({
             <CardContent className="flex flex-col gap-4">
               <dl className="grid grid-cols-2 gap-3 text-sm">
                 <div>
+                  <dt className="text-xs text-muted-foreground">Item</dt>
+                  <dd>{invoice.item ?? 'Not specified'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">Buyer</dt>
+                  <dd>{customerLabel(invoice)}</dd>
+                </div>
+                {invoice.notes && (
+                  <div className="col-span-2">
+                    <dt className="text-xs text-muted-foreground">Notes</dt>
+                    <dd>{invoice.notes}</dd>
+                  </div>
+                )}
+                <div>
                   <dt className="text-xs text-muted-foreground">Created</dt>
-                  <dd>{formatDate(invoice.created_at)}</dd>
+                  <dd>{formatDateTime(invoice.created_at)}</dd>
                 </div>
                 <div>
                   <dt className="text-xs text-muted-foreground">Due</dt>
@@ -120,7 +140,7 @@ export default function InvoiceDetailPage({
                 <CardTitle>Payment received</CardTitle>
                 <CardDescription>
                   Confirmed by Monnify
-                  {payment.paid_at ? ` on ${formatDate(payment.paid_at)}` : ''}
+                  {payment.paid_at ? ` on ${formatDateTime(payment.paid_at)}` : ''}
                   {payment.payment_method
                     ? ` via ${payment.payment_method.toLowerCase().replace(/_/g, ' ')}`
                     : ''}

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { emailSchema } from './common';
+import { emailSchema, phoneSchema } from './common';
 
 // Mirrors backend src/modules/invoices/* shapes.
 
@@ -16,9 +16,12 @@ export const invoiceSchema = z.object({
   id: z.string(),
   merchant_id: z.string(),
   invoice_reference: z.string().nullable(),
-  customer_name: z.string(),
+  customer_name: z.string().nullable(),
   customer_email: z.string().nullable(),
-  description: z.string().nullable(),
+  customer_phone: z.string().nullable(),
+  customer_social_handle: z.string().nullable(),
+  item: z.string().nullable(),
+  notes: z.string().nullable(),
   amount: z.string(), // pg numeric arrives as a string
   currency: z.string(),
   due_date: z.string().nullable(),
@@ -44,19 +47,56 @@ export const paymentSchema = z.object({
   created_at: z.string(),
 });
 
-export const createInvoiceInputSchema = z.object({
-  customer_name: z.string().trim().min(1, 'Customer name is required').max(200),
-  customer_email: emailSchema.optional(),
-  description: z.string().trim().max(500).optional(),
-  amount: z.coerce
-    .number()
-    .positive('Amount must be greater than 0')
-    .max(1_000_000_000),
-  due_date: z
-    .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Due date must be YYYY-MM-DD')
-    .optional(),
-});
+// A handle like "@chidi_styles"; the leading @ is optional. Mirrors the backend.
+const socialHandleSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(100)
+  .regex(/^@?[a-zA-Z0-9._]+$/, 'Enter a valid handle, e.g. @chidi_styles');
+
+// The form's untouched optional fields default to "" (not undefined), so treat a
+// blank field as absent before its validator runs - otherwise every empty
+// optional field would fail its own format check on submit.
+const optional = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess(
+    (v) => (typeof v === 'string' && v.trim() === '' ? undefined : v),
+    schema.optional(),
+  );
+
+// The sale is a required `item` plus optional `notes`; the buyer needs at least
+// one identifier (name / phone / email / social handle) - name is not mandatory
+// because social-commerce buyers are often known only by a handle.
+export const createInvoiceInputSchema = z
+  .object({
+    customer_name: optional(z.string().trim().min(1, 'Enter a name').max(200)),
+    customer_phone: optional(phoneSchema),
+    customer_email: optional(emailSchema),
+    customer_social_handle: optional(socialHandleSchema),
+    item: z.string().trim().min(1, 'Item is required').max(200),
+    notes: optional(z.string().trim().max(500)),
+    amount: z.coerce
+      .number()
+      .positive('Amount must be greater than 0')
+      .max(1_000_000_000),
+    due_date: optional(
+      z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Due date must be YYYY-MM-DD'),
+    ),
+  })
+  .refine(
+    (v) =>
+      Boolean(
+        v.customer_name ||
+          v.customer_phone ||
+          v.customer_email ||
+          v.customer_social_handle,
+      ),
+    {
+      message:
+        'Add at least one way to identify the buyer: name, phone, email, or social handle.',
+      path: ['customer_name'],
+    },
+  );
 
 export const createInvoiceResponseSchema = z.object({
   invoice: invoiceSchema,
@@ -78,13 +118,14 @@ export const invoiceDetailResponseSchema = z.object({
 });
 
 // Mirrors backend src/modules/invoices/public.routes.ts: the safe buyer-facing
-// subset. Payment channels are null whenever the invoice is not payable, and
-// payment (when paid) carries no settlement/commission figures.
+// subset. `notes`, customer phone/email, and settlement figures are withheld.
+// Payment channels are null unless the invoice is still payable.
 export const publicInvoiceSchema = z.object({
   invoice_reference: z.string(),
   business_name: z.string(),
-  customer_name: z.string(),
-  description: z.string().nullable(),
+  customer_name: z.string().nullable(),
+  customer_social_handle: z.string().nullable(),
+  item: z.string().nullable(),
   amount: z.string(),
   currency: z.string(),
   due_date: z.string().nullable(),

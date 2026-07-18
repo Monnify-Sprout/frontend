@@ -6,7 +6,7 @@ import { ArrowLeft, CircleCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { z } from 'zod';
 
 import { InvoiceShare } from '@/components/invoice-share';
@@ -23,7 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api, apiErrorMessage } from '@/lib/api';
-import { formatNaira } from '@/lib/format';
+import { customerLabel, formatNaira, groupAmountInput } from '@/lib/format';
 import {
   createInvoiceInputSchema,
   createInvoiceResponseSchema,
@@ -45,7 +45,7 @@ function Confirmation({ result }: { result: CreateResult }) {
         </span>
         <CardTitle className="text-xl">Invoice created</CardTitle>
         <CardDescription>
-          Share these payment details with {invoice.customer_name}. The invoice
+          Share these payment details with {customerLabel(invoice)}. The invoice
           is marked paid automatically once Monnify confirms the payment.
         </CardDescription>
       </CardHeader>
@@ -54,7 +54,8 @@ function Confirmation({ result }: { result: CreateResult }) {
           <p className="text-xs text-muted-foreground">Amount due</p>
           <p className="text-2xl font-semibold">{formatNaira(invoice.amount)}</p>
           <p className="text-xs text-muted-foreground">
-            Ref {invoice.invoice_reference}
+            {invoice.item ? `${invoice.item} · ` : ''}Ref{' '}
+            {invoice.invoice_reference}
           </p>
         </div>
 
@@ -99,19 +100,27 @@ export default function NewInvoicePage() {
     resolver: zodResolver(createInvoiceInputSchema),
     defaultValues: {
       customer_name: '',
-      customer_email: undefined,
-      description: '',
+      customer_phone: '',
+      customer_email: '',
+      customer_social_handle: '',
+      item: '',
+      notes: '',
       amount: '',
-      due_date: undefined,
+      due_date: '',
     },
   });
 
   const create = useMutation({
     mutationFn: async (input: FormValues) => {
+      // Empty optional fields go out as undefined, not "".
       const payload = {
-        ...input,
+        customer_name: input.customer_name || undefined,
+        customer_phone: input.customer_phone || undefined,
         customer_email: input.customer_email || undefined,
-        description: input.description || undefined,
+        customer_social_handle: input.customer_social_handle || undefined,
+        item: input.item,
+        notes: input.notes || undefined,
+        amount: input.amount,
         due_date: input.due_date || undefined,
       };
       const res = await api.post('/api/invoices', payload);
@@ -155,66 +164,147 @@ export default function NewInvoicePage() {
         <Card>
           <CardContent>
             <form
-              className="flex flex-col gap-5"
+              className="flex flex-col gap-6"
               onSubmit={form.handleSubmit((input) => create.mutate(input))}
               noValidate
             >
-              <Field>
-                <Label htmlFor="customer_name">Customer name</Label>
-                <Input
-                  id="customer_name"
-                  placeholder="Chidi Okafor"
-                  className="h-11"
-                  aria-invalid={!!errors.customer_name}
-                  {...form.register('customer_name')}
-                />
+              <fieldset className="flex flex-col gap-5">
+                <legend className="mb-1 text-sm font-medium">
+                  What they bought
+                </legend>
+
+                <Field>
+                  <Label htmlFor="item">Item</Label>
+                  <Input
+                    id="item"
+                    placeholder="2 yards of ankara fabric"
+                    className="h-11"
+                    aria-invalid={!!errors.item}
+                    {...form.register('item')}
+                  />
+                  <FieldError>{errors.item?.message}</FieldError>
+                </Field>
+
+                <Field>
+                  <Label htmlFor="notes">
+                    Notes{' '}
+                    <span className="font-normal text-muted-foreground">
+                      (optional)
+                    </span>
+                  </Label>
+                  <Textarea
+                    id="notes"
+                    placeholder="Anything else about this sale"
+                    aria-invalid={!!errors.notes}
+                    {...form.register('notes')}
+                  />
+                  <FieldError>{errors.notes?.message}</FieldError>
+                </Field>
+              </fieldset>
+
+              <fieldset className="flex flex-col gap-5">
+                <legend className="text-sm font-medium">Buyer</legend>
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Identify the buyer by at least one of the following. A name is
+                  not required if you only know their handle or number.
+                </p>
+
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <Field>
+                    <Label htmlFor="customer_name">
+                      Name{' '}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Input
+                      id="customer_name"
+                      placeholder="Chidi Okafor"
+                      className="h-11"
+                      aria-invalid={!!errors.customer_name}
+                      {...form.register('customer_name')}
+                    />
+                  </Field>
+
+                  <Field>
+                    <Label htmlFor="customer_social_handle">
+                      Instagram / social handle{' '}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Input
+                      id="customer_social_handle"
+                      placeholder="@chidi_styles"
+                      className="h-11"
+                      aria-invalid={!!errors.customer_social_handle}
+                      {...form.register('customer_social_handle')}
+                    />
+                    <FieldError>
+                      {errors.customer_social_handle?.message}
+                    </FieldError>
+                  </Field>
+
+                  <Field>
+                    <Label htmlFor="customer_phone">
+                      Phone{' '}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Input
+                      id="customer_phone"
+                      type="tel"
+                      placeholder="08012345678"
+                      className="h-11"
+                      aria-invalid={!!errors.customer_phone}
+                      {...form.register('customer_phone')}
+                    />
+                    <FieldError>{errors.customer_phone?.message}</FieldError>
+                  </Field>
+
+                  <Field>
+                    <Label htmlFor="customer_email">
+                      Email{' '}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Input
+                      id="customer_email"
+                      type="email"
+                      placeholder="chidi@example.com"
+                      className="h-11"
+                      aria-invalid={!!errors.customer_email}
+                      {...form.register('customer_email')}
+                    />
+                    <FieldError>{errors.customer_email?.message}</FieldError>
+                  </Field>
+                </div>
+                {/* The "at least one identifier" rule reports on customer_name. */}
                 <FieldError>{errors.customer_name?.message}</FieldError>
-              </Field>
-
-              <Field>
-                <Label htmlFor="customer_email">
-                  Customer email{' '}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
-                </Label>
-                <Input
-                  id="customer_email"
-                  type="email"
-                  placeholder="chidi@example.com"
-                  className="h-11"
-                  aria-invalid={!!errors.customer_email}
-                  {...form.register('customer_email')}
-                />
-                <FieldError>{errors.customer_email?.message}</FieldError>
-              </Field>
-
-              <Field>
-                <Label htmlFor="description">
-                  Description{' '}
-                  <span className="font-normal text-muted-foreground">
-                    (optional)
-                  </span>
-                </Label>
-                <Textarea
-                  id="description"
-                  placeholder="What is this payment for?"
-                  aria-invalid={!!errors.description}
-                  {...form.register('description')}
-                />
-                <FieldError>{errors.description?.message}</FieldError>
-              </Field>
+              </fieldset>
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <Field>
                   <Label htmlFor="amount">Amount (NGN)</Label>
-                  <Input
-                    id="amount"
-                    inputMode="decimal"
-                    placeholder="15000"
-                    className="h-11"
-                    aria-invalid={!!errors.amount}
-                    {...form.register('amount')}
+                  <Controller
+                    control={form.control}
+                    name="amount"
+                    render={({ field }) => (
+                      <Input
+                        id="amount"
+                        inputMode="decimal"
+                        placeholder="15,000"
+                        className="h-11"
+                        aria-invalid={!!errors.amount}
+                        value={groupAmountInput(String(field.value ?? ''))}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.replace(/[^\d.]/g, ''))
+                        }
+                        onBlur={field.onBlur}
+                      />
+                    )}
                   />
                   <FieldError>{errors.amount?.message}</FieldError>
                 </Field>

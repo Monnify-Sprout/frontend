@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { api } from '@/lib/api';
-import { formatDate, formatNaira } from '@/lib/format';
+import { customerLabel, formatDate, formatDateTime, formatNaira } from '@/lib/format';
 import { publicInvoiceResponseSchema } from '@/lib/schemas';
 
 // Buyer-facing payment page (PRD §7.2 flow C). The invoice status shown here
@@ -97,16 +97,16 @@ export default function PayPage({
             <p className="text-3xl font-semibold tracking-tight">
               {formatNaira(invoice.amount)}
             </p>
-            {invoice.description && (
+            {invoice.item && (
               <p className="mt-1 text-sm text-muted-foreground">
-                {invoice.description}
+                {invoice.item}
               </p>
             )}
           </div>
           <dl className="grid grid-cols-2 gap-3 border-t pt-4 text-sm">
             <div>
               <dt className="text-xs text-muted-foreground">Billed to</dt>
-              <dd>{invoice.customer_name}</dd>
+              <dd>{customerLabel(invoice)}</dd>
             </div>
             <div>
               <dt className="text-xs text-muted-foreground">Due</dt>
@@ -175,7 +175,7 @@ export default function PayPage({
             <CardTitle className="text-xl">Payment received</CardTitle>
             <CardDescription>
               {formatNaira(payment?.amount ?? invoice.amount)} paid
-              {payment?.paid_at ? ` on ${formatDate(payment.paid_at)}` : ''}
+              {payment?.paid_at ? ` on ${formatDateTime(payment.paid_at)}` : ''}
               {payment?.payment_method
                 ? ` via ${payment.payment_method.toLowerCase().replace(/_/g, ' ')}`
                 : ''}

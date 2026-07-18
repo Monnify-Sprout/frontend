@@ -13,7 +13,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { api } from '@/lib/api';
-import { formatDate, formatNaira, INVOICE_STATUS_STYLES } from '@/lib/format';
+import {
+  customerLabel,
+  formatDate,
+  formatDateTime,
+  formatNaira,
+  INVOICE_STATUS_STYLES,
+} from '@/lib/format';
 import { listInvoicesResponseSchema, meResponseSchema } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
@@ -139,10 +145,10 @@ export default function InvoicesPage() {
                         href={`/invoices/${inv.id}`}
                         className="font-medium text-foreground hover:text-brand"
                       >
-                        {inv.customer_name}
+                        {customerLabel(inv)}
                       </Link>
                       <p className="text-xs text-muted-foreground">
-                        {inv.invoice_reference}
+                        {inv.item ?? inv.invoice_reference}
                       </p>
                     </td>
                     <td className="px-4 py-3 font-medium">
@@ -162,7 +168,7 @@ export default function InvoicesPage() {
                       {inv.due_date ? formatDate(inv.due_date) : 'None'}
                     </td>
                     <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                      {formatDate(inv.created_at)}
+                      {formatDateTime(inv.created_at)}
                     </td>
                   </tr>
                 ))}
