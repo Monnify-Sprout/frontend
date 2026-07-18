@@ -11,6 +11,24 @@ running locally alongside this app from phase 5 onward.
 Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui, Zustand, TanStack React
 Query, Axios (JWT interceptor), React Hook Form + Zod resolvers.
 
+shadcn components use the `base-nova` style on top of `@base-ui/react` (not radix).
+Keep it that way — the harmony-admin reference app uses radix/new-york, but we do
+NOT port its components; only its design tokens (below).
+
+## Design system (ported from harmony-admin)
+
+- Typeface: **Poppins** (`--font-poppins` → `--font-sans`/`--font-heading`), wired
+  in `src/app/layout.tsx`.
+- Palette: shadcn neutral base (shared with harmony) + a Sprout brand accent
+  token `--brand` / `--color-brand` — green `oklch(0.58 0.16 150)` (light) /
+  `oklch(0.62 0.16 150)` (dark). The token structure was ported from harmony's
+  red accent, then recoloured green for the Sprout brand. Use `bg-brand` /
+  `text-brand-foreground` for the primary brand colour.
+- Charts: harmony's colourful `--chart-1..5` palette (light + dark).
+- Icons: **lucide-react** (matches harmony's icon library). Harmony's hand-rolled
+  brand icons (Chowdeck, logos, etc.) are intentionally NOT ported.
+- All tokens live in `src/app/globals.css`.
+
 ## Core mechanic — pin this
 
 A merchant isn't Active until BVN/NIN verification and sub-account creation both
