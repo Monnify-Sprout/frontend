@@ -65,4 +65,15 @@ live backend (register → dashboard, refresh persistence, logout redirect, logi
   `next.config.ts` rewrites (backend has no CORS - keep it that way).
 - Base UI note: `Button render={<Link/>}` needs `nativeButton={false}`.
 
-Next: Phase 6 - onboarding/verification UI + invoice creation UI.
+Phase 6 (verification + invoice UI) is **complete and verified in-browser**:
+- `/verify`: BVN/NIN capture; pending / failed / verified states visibly
+  distinct; failed shows the stored backend reason and allows retry.
+- `/invoices` (list + status badges), `/invoices/new` (form then in-place
+  confirmation with virtual account + checkout URL + settlement split),
+  `/invoices/[id]` (detail; payment + commission once paid).
+- Gating: non-Active merchants get a locked state and /invoices/new redirects;
+  the backend 403 backs this up.
+- Nav highlights the active path; Invoices enabled on desktop + mobile bars.
+- Shared helpers: `src/lib/format.ts` (naira, dates, status styles).
+
+Next: Phase 7 - public invoice payment page (/pay/[reference]).
