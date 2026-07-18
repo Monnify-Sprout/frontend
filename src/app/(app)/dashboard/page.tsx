@@ -11,7 +11,9 @@ import {
   ShieldAlert,
   ShieldCheck,
 } from 'lucide-react';
+import Link from 'next/link';
 
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -149,10 +151,24 @@ export default function DashboardPage() {
             <CardDescription>
               {merchant.verification_status === 'failed'
                 ? (merchant.verification_reason ??
-                  'Your identity check failed. Our team will review it.')
-                : 'Verify your BVN or NIN to activate payments. The verification flow arrives in the next phase of the build.'}
+                  'Your identity check failed. You can try again.')
+                : 'Verify your BVN or NIN to activate payments for your business.'}
             </CardDescription>
           </CardHeader>
+          <CardContent>
+            <Button
+              nativeButton={false}
+              size="sm"
+              className="bg-brand text-brand-foreground hover:bg-brand/90"
+              render={
+                <Link href="/verify">
+                  {merchant.verification_status === 'failed'
+                    ? 'Try verification again'
+                    : 'Verify your identity'}
+                </Link>
+              }
+            />
+          </CardContent>
         </Card>
       )}
 
@@ -195,17 +211,22 @@ export default function DashboardPage() {
           <span className="flex size-10 items-center justify-center rounded-lg bg-brand/10 text-brand">
             <ChartNoAxesColumn className="size-5" />
           </span>
-          <CardTitle>Invoices &amp; analytics</CardTitle>
+          <CardTitle>Get paid</CardTitle>
           <CardDescription>
-            Invoice creation, payment tracking and your sales analytics land
-            here in the next build phases. The backend for all of it is already
-            live.
+            Create an invoice and share the virtual account or checkout link
+            with your customer. Sales analytics land here next.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-32 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
-            Coming in Phase 6 &amp; 7
-          </div>
+          <Button
+            nativeButton={false}
+            className="bg-brand text-brand-foreground hover:bg-brand/90"
+            render={
+              <Link href={merchant.status === 'active' ? '/invoices/new' : '/invoices'}>
+                Create an invoice
+              </Link>
+            }
+          />
         </CardContent>
       </Card>
     </div>
