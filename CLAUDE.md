@@ -96,4 +96,19 @@ the time; `customerLabel` renders the best available buyer identifier across the
 list, detail, and pay page. Empty optional form fields are coerced to undefined
 in the schema so they don't fail their own format checks.
 
-Next: Phase 8 - analytics dashboard + connect-account UI.
+Phase 8 (analytics + connected-account UI) is **complete and verified
+in-browser**:
+- `src/components/analytics-view.tsx` is ONE dimension-agnostic component (stat
+  tiles + a single-hue trend bar chart with hover + a generic
+  {label,count,amount} breakdown) rendering merchant AND connected scopes from
+  one codepath. Charts are hand-rolled SVG/HTML (no chart library) on the
+  `--brand`/`--chart-*` tokens.
+- `/analytics`: scope switcher (my sales vs each connected account) + 7/30/90-day
+  window. `/connected`: connect form (read-only messaging), list, sync, two-step
+  disconnect. Analytics + Connected nav are now `ready`.
+- Invoice list has search (customer/item/reference) + status filter; created/paid
+  show date+time.
+- Settlement account collected on `/verify` (curated bank list in
+  `src/lib/banks.ts`); the verified state shows where payouts settle.
+
+Next: Phase 9a - seed script + demo rehearsal.
