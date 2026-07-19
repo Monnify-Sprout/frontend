@@ -1,4 +1,4 @@
-import type { InvoiceStatus } from '@/lib/schemas';
+import type { InvoiceStatus, PaymentLinkStatus } from '@/lib/schemas';
 
 const ngn = new Intl.NumberFormat('en-NG', {
   style: 'currency',
@@ -98,3 +98,16 @@ export const INVOICE_STATUS_STYLES: Record<InvoiceStatus, string> = {
   expired: 'bg-muted text-muted-foreground',
   cancelled: 'bg-destructive/10 text-destructive',
 };
+
+// Static payment link lifecycle (Phase 12): active is live, paused is a
+// reversible pause, ended is terminal.
+export const PAYMENT_LINK_STATUS_STYLES: Record<PaymentLinkStatus, string> = {
+  active: 'bg-brand/10 text-brand',
+  paused: 'bg-amber-100 text-amber-700',
+  ended: 'bg-muted text-muted-foreground',
+};
+
+// A link's price: a fixed amount, or "Buyer decides" for a buyer-entered link.
+export function formatLinkAmount(amount: string | null): string {
+  return amount ? formatNaira(amount) : 'Buyer decides';
+}

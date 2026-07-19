@@ -130,5 +130,80 @@ Phase 9b (polish + demo rehearsal) is **complete and verified in-browser**:
   a ₦10,000 invoice paid via a signed webhook (split recorded), the merchant's
   own analytics, and the same view rendering for the connected account.
 
-Next: nothing outstanding for the hackathon demo path. Roadmap items (categories,
-static links, branches, invoice side-sheet) are optional follow-ups.
+Phase 10 (analytics deepening + advanced invoice filtering) is **complete and
+verified in-browser** (2026-07-19):
+- `AnalyticsView` stays ONE component for both scopes but is richer: extra stat
+  tiles (largest sale, unique customers, and merchant-only Net settled + Sprout
+  fees), a `FunnelCard` (collection rate, outstanding, avg time-to-payment, and a
+  stacked paid/outstanding/overdue/cancelled bar), and new breakdown cards (Time
+  of day, Top customers, and merchant-only Top items). Merchant-only pieces render
+  only when present (`data.scope.type === 'merchant'` / `data.funnel`), so a
+  connected account cleanly shows just the shared metrics. Verified both scopes
+  in-browser (connected hides net/fees/funnel/top-items).
+- New base-nova `Dialog` primitive (`components/ui/dialog.tsx`, on
+  `@base-ui/react/dialog` - Portal + Backdrop + Popup, with `data-[starting-style]`
+  / `data-[ending-style]` enter/leave transitions). First reusable overlay in the
+  app; a future invoice side-sheet is the same primitive edge-positioned.
+- Invoice filter modal (`components/invoice-filters.tsx`): status (multi), date
+  created / due / paid ranges, amount min/max, and customer details. The pure
+  `applyInvoiceFilters(list, filters)` runs CLIENT-SIDE over the already-fetched
+  list and composes with the existing search box; the page shows an active-filter
+  count badge, a "showing X of Y" line, and a Clear control. The "date paid"
+  filter + a new Paid column use `paid_at`, now on each row from the backend list
+  (schema field is `.nullable().optional()` since create/detail omit it).
+- The list's old single-select status pills were replaced by this modal.
+
+Phase 11 (categories) is **complete and verified in-browser** (2026-07-19):
+- `/categories` manager (`app/(app)/categories/page.tsx`): create (name + colour
+  swatch from `lib/category-colors.ts`), inline rename/recolour, two-step delete,
+  each row showing its colour dot + `invoice_count`. A new `Categories` nav item
+  (Tag icon) sits between Analytics and Connected in `(app)/layout.tsx` (sidebar +
+  mobile bar).
+- Invoice form category picker (`/invoices/new`): colour-dot pills (None + each
+  category) with a "Manage" link; the chosen `category_id` rides the create
+  payload. The list shows a colour chip beside the item; the detail page adds a
+  Category row.
+- The dimension-agnostic `AnalyticsView` gained a "By category" `BreakdownCard`
+  (merchant-only, hidden for a connected account) fed by the backend's
+  `by_category`. `BreakdownCard`'s `Row` grew an optional per-row `color` so the
+  category bars use each category's own colour (the "Uncategorised" row has a null
+  colour and falls back to the brand hue) - a minimal extension, not a rewrite.
+- The invoice filter modal gained a Category section (colour-dot toggles);
+  `InvoiceFilters` grew `categories: string[]`, composing with the other filters
+  and the search box (which now also matches category name). The dashboard fetches
+  categories and passes them to `InvoiceFilterDialog`.
+
+Phase 12 (static payment links) is **complete and verified in-browser**
+(2026-07-20):
+- Payment links live as a TAB of the invoices page: a shared `InvoiceTabs`
+  segmented control (`components/invoice-tabs.tsx`) switches between `/invoices`
+  (one-time invoices) and `/invoices/links` (reusable links). Links nest under
+  `/invoices/*` so the Invoices nav item stays highlighted; no new nav item.
+- `/invoices/links` (list): status-count cards (Total / Active / Paused / Ended /
+  Total collected) + a table (title, price or "Buyer decides", status badge,
+  collection count, collected, created). Locked/loading/error/empty states mirror
+  the invoice list.
+- `/invoices/links/new` (create): title, optional item, a Fixed-price vs
+  Buyer-decides toggle (`createPaymentLinkFormSchema` has a form-only `mode` and a
+  superRefine requiring an amount when fixed), and the category picker. On success,
+  a confirmation with the shareable `LinkShare` block.
+- `/invoices/links/[id]` (detail): stat cards (total collected, collections,
+  average, last paid), status actions (Pause/Resume/End - ending is terminal), the
+  `LinkShare` block (shown only while active), a collections table, and a mock-only
+  "Simulate a payment" card (gated on `merchant.verification_mode === 'mock'`) that
+  drops a test collection live.
+- `LinkShare` (`components/link-share.tsx`) shows the shareable public URL
+  (`window.location.origin` read at render with `suppressHydrationWarning`), the
+  reserved account, and the checkout URL. Public buyer page `/link/[slug]` (own
+  public chrome, mirrors `/pay`): shows how to pay while active; paused shows
+  "temporarily unavailable" and ended "closed" (no channels).
+- Analytics: `AnalyticsView` gained a merchant-only "By payment link"
+  `BreakdownCard` fed by the backend's `by_link` (rendered only when it has rows);
+  the shared totals/trend/breakdowns already include link revenue because the
+  backend unions collections into the merchant base. Schema mirror in
+  `lib/schemas/payment-link.ts` + `by_link` on `analytics.ts`; status styles +
+  `formatLinkAmount` in `lib/format.ts`.
+
+Next: nothing outstanding for the hackathon demo path. Remaining roadmap items
+(merchant branches, invoice side-sheet) are optional follow-ups; the Dialog
+primitive is the groundwork for the side-sheet.

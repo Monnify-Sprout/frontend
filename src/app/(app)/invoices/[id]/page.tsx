@@ -123,6 +123,18 @@ export default function InvoiceDetailPage({
                     </dd>
                   </div>
                 )}
+                {invoice.category_name && (
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Category</dt>
+                    <dd className="flex items-center gap-1.5">
+                      <span
+                        className="size-2.5 rounded-full ring-1 ring-black/10"
+                        style={{ backgroundColor: invoice.category_color ?? undefined }}
+                      />
+                      {invoice.category_name}
+                    </dd>
+                  </div>
+                )}
                 {invoice.notes && (
                   <div className="col-span-2">
                     <dt className="text-xs text-muted-foreground">Notes</dt>

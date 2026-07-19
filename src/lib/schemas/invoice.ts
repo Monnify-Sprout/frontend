@@ -22,12 +22,21 @@ export const invoiceSchema = z.object({
   currency: z.string(),
   due_date: z.string().nullable(),
   status: invoiceStatusSchema,
+  category_id: z.string().nullable(),
   virtual_account_number: z.string().nullable(),
   checkout_url: z.string().nullable(),
   monnify_transaction_reference: z.string().nullable(),
   settlement_path: settlementPathSchema.nullable(),
   created_at: z.string(),
   updated_at: z.string(),
+  // Only the merchant list endpoint joins the payment to expose this; the
+  // create/detail responses omit it (detail carries a full payment object), so
+  // it is optional as well as nullable.
+  paid_at: z.string().nullable().optional(),
+  // Only the merchant list/detail endpoints join the category to expose these;
+  // create/public responses omit them, so they are optional as well as nullable.
+  category_name: z.string().nullable().optional(),
+  category_color: z.string().nullable().optional(),
 });
 
 export const paymentSchema = z.object({
@@ -88,6 +97,8 @@ export const createInvoiceInputSchema = z
     due_date: optional(
       z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Due date must be YYYY-MM-DD'),
     ),
+    // Optional merchant category (Phase 11); the picker sends the category id.
+    category_id: optional(z.string().uuid('Invalid category')),
   })
   .refine(
     (v) =>

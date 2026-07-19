@@ -1,12 +1,12 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, CircleCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { InvoiceShare } from '@/components/invoice-share';
@@ -25,7 +25,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { api, apiErrorMessage } from '@/lib/api';
 import { customerLabel, formatNaira, groupAmountInput } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { createInvoiceInputSchema, createInvoiceResponseSchema } from '@/lib/schemas';
+import {
+  createInvoiceInputSchema,
+  createInvoiceResponseSchema,
+  listCategoriesResponseSchema,
+} from '@/lib/schemas';
 import { useAuthStore } from '@/store/auth';
 
 // react-hook-form works with the schema's INPUT type (amount arrives as a
@@ -116,8 +120,19 @@ export default function NewInvoicePage() {
       notes: '',
       amount: '',
       due_date: '',
+      category_id: '',
     },
   });
+
+  // Merchant categories for the picker (Phase 11).
+  const categories = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await api.get('/api/categories');
+      return listCategoriesResponseSchema.parse(res.data).categories;
+    },
+  });
+  const selectedCategoryId = useWatch({ control: form.control, name: 'category_id' });
 
   // Platform picker for the social handle. `platformChoice` is the selected pill
   // ('' | a known key | 'other'); the value actually stored in the form field is
@@ -155,6 +170,7 @@ export default function NewInvoicePage() {
         notes: input.notes || undefined,
         amount: input.amount,
         due_date: input.due_date || undefined,
+        category_id: input.category_id || undefined,
       };
       const res = await api.post('/api/invoices', payload);
       return createInvoiceResponseSchema.parse(res.data);
@@ -228,6 +244,76 @@ export default function NewInvoicePage() {
                     {...form.register('notes')}
                   />
                   <FieldError>{errors.notes?.message}</FieldError>
+                </Field>
+
+                <Field>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="category-picker">
+                      Category{' '}
+                      <span className="font-normal text-muted-foreground">
+                        (optional)
+                      </span>
+                    </Label>
+                    <Link
+                      href="/categories"
+                      className="text-xs font-medium text-brand hover:underline"
+                    >
+                      Manage
+                    </Link>
+                  </div>
+                  {categories.data && categories.data.length > 0 ? (
+                    <div
+                      id="category-picker"
+                      className="flex flex-wrap gap-2"
+                      role="group"
+                      aria-label="Category"
+                    >
+                      <button
+                        type="button"
+                        aria-pressed={!selectedCategoryId}
+                        onClick={() => form.setValue('category_id', '')}
+                        className={cn(
+                          'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+                          !selectedCategoryId
+                            ? 'border-brand bg-brand text-brand-foreground'
+                            : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
+                        )}
+                      >
+                        None
+                      </button>
+                      {categories.data.map((c) => {
+                        const selected = selectedCategoryId === c.id;
+                        return (
+                          <button
+                            key={c.id}
+                            type="button"
+                            aria-pressed={selected}
+                            onClick={() => form.setValue('category_id', c.id)}
+                            className={cn(
+                              'flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+                              selected
+                                ? 'border-brand bg-brand text-brand-foreground'
+                                : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
+                            )}
+                          >
+                            <span
+                              className="size-2.5 rounded-full ring-1 ring-black/10"
+                              style={{ backgroundColor: c.color }}
+                            />
+                            {c.name}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No categories yet.{' '}
+                      <Link href="/categories" className="text-brand hover:underline">
+                        Create one
+                      </Link>{' '}
+                      to group your sales.
+                    </p>
+                  )}
                 </Field>
               </fieldset>
 

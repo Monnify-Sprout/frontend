@@ -1,10 +1,18 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Lock, Plus, ReceiptText, Search } from 'lucide-react';
+import { Lock, Plus, ReceiptText, Search, X } from 'lucide-react';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
+import {
+  applyInvoiceFilters,
+  countActiveFilters,
+  EMPTY_FILTERS,
+  InvoiceFilterDialog,
+  type InvoiceFilters,
+} from '@/components/invoice-filters';
+import { InvoiceTabs } from '@/components/invoice-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -23,20 +31,12 @@ import {
   INVOICE_STATUS_STYLES,
 } from '@/lib/format';
 import {
+  listCategoriesResponseSchema,
   listInvoicesResponseSchema,
   meResponseSchema,
-  type InvoiceStatus,
 } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
-
-const STATUS_FILTERS: Array<'all' | InvoiceStatus> = [
-  'all',
-  'pending',
-  'paid',
-  'expired',
-  'cancelled',
-];
 
 // Shown to merchants who are not Active yet: invoice creation stays out of
 // reach until verification completes (Phase 6 acceptance).
@@ -88,21 +88,31 @@ export default function InvoicesPage() {
     enabled: active,
   });
 
+  const categories = useQuery({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const res = await api.get('/api/categories');
+      return listCategoriesResponseSchema.parse(res.data).categories;
+    },
+    enabled: active,
+  });
+
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'all' | InvoiceStatus>('all');
+  const [filters, setFilters] = useState<InvoiceFilters>(EMPTY_FILTERS);
+  const activeFilters = countActiveFilters(filters);
 
   const filtered = useMemo(() => {
-    const items = invoices.data ?? [];
+    const structured = applyInvoiceFilters(invoices.data ?? [], filters);
     const q = search.trim().toLowerCase();
-    return items.filter((inv) => {
-      if (statusFilter !== 'all' && inv.status !== statusFilter) return false;
-      if (!q) return true;
+    if (!q) return structured;
+    return structured.filter((inv) => {
       const hay = [
         inv.customer_name,
         inv.customer_social_handle,
         inv.customer_phone,
         inv.customer_email,
         inv.item,
+        inv.category_name,
         inv.invoice_reference,
       ]
         .filter(Boolean)
@@ -110,12 +120,16 @@ export default function InvoicesPage() {
         .toLowerCase();
       return hay.includes(q);
     });
-  }, [invoices.data, search, statusFilter]);
+  }, [invoices.data, search, filters]);
 
   if (!merchant) return null;
 
+  const total = invoices.data?.length ?? 0;
+  const narrowed = search.trim() !== '' || activeFilters > 0;
+
   return (
     <div className="flex flex-col gap-6">
+      <InvoiceTabs />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Invoices</h1>
@@ -151,7 +165,7 @@ export default function InvoicesPage() {
             Your invoices could not be loaded. Refresh to try again.
           </CardContent>
         </Card>
-      ) : (invoices.data?.length ?? 0) === 0 ? (
+      ) : total === 0 ? (
         <Card>
           <CardHeader className="items-center gap-3 text-center">
             <span className="flex size-14 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -177,30 +191,40 @@ export default function InvoicesPage() {
                 aria-label="Search invoices"
               />
             </div>
-            <div className="flex flex-wrap gap-1.5">
-              {STATUS_FILTERS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setStatusFilter(s)}
-                  aria-pressed={statusFilter === s}
-                  className={cn(
-                    'rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors',
-                    statusFilter === s
-                      ? 'border-brand bg-brand/10 text-brand'
-                      : 'border-input text-muted-foreground hover:bg-muted',
-                  )}
+            <div className="flex items-center gap-2">
+              <InvoiceFilterDialog
+                value={filters}
+                onApply={setFilters}
+                categories={categories.data ?? []}
+              />
+              {narrowed && (
+                <Button
+                  variant="ghost"
+                  size="lg"
+                  className="h-10 text-muted-foreground"
+                  onClick={() => {
+                    setSearch('');
+                    setFilters(EMPTY_FILTERS);
+                  }}
                 >
-                  {s}
-                </button>
-              ))}
+                  <X data-icon="inline-start" />
+                  Clear
+                </Button>
+              )}
             </div>
           </div>
+
+          {narrowed && (
+            <p className="text-xs text-muted-foreground">
+              Showing {filtered.length} of {total}{' '}
+              {total === 1 ? 'invoice' : 'invoices'}
+            </p>
+          )}
 
           {filtered.length === 0 ? (
             <Card>
               <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                No invoices match your search.
+                No invoices match your search and filters.
               </CardContent>
             </Card>
           ) : (
@@ -216,6 +240,7 @@ export default function InvoicesPage() {
                       <th className="hidden px-4 py-3 font-medium sm:table-cell">
                         Created
                       </th>
+                      <th className="hidden px-4 py-3 font-medium lg:table-cell">Paid</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -231,9 +256,20 @@ export default function InvoicesPage() {
                           >
                             {customerLabel(inv)}
                           </Link>
-                          <p className="text-xs text-muted-foreground">
-                            {inv.item ?? inv.invoice_reference}
-                          </p>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                            <span>{inv.item ?? inv.invoice_reference}</span>
+                            {inv.category_name && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                                <span
+                                  className="size-2 rounded-full ring-1 ring-black/10"
+                                  style={{
+                                    backgroundColor: inv.category_color ?? undefined,
+                                  }}
+                                />
+                                {inv.category_name}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3 font-medium">
                           {formatNaira(inv.amount)}
@@ -253,6 +289,9 @@ export default function InvoicesPage() {
                         </td>
                         <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
                           {formatDateTime(inv.created_at)}
+                        </td>
+                        <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">
+                          {inv.paid_at ? formatDateTime(inv.paid_at) : 'None'}
                         </td>
                       </tr>
                     ))}

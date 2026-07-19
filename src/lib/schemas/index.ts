@@ -4,5 +4,7 @@ export * from './merchant';
 export * from './auth';
 export * from './verification';
 export * from './invoice';
+export * from './payment-link';
+export * from './category';
 export * from './connected';
 export * from './analytics';
