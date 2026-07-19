@@ -214,10 +214,10 @@ export default function DashboardPage() {
           <CardTitle>Get paid</CardTitle>
           <CardDescription>
             Create an invoice and share the virtual account or checkout link
-            with your customer. Sales analytics land here next.
+            with your customer, then track every sale in Analytics.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex flex-wrap gap-2">
           <Button
             nativeButton={false}
             className="bg-brand text-brand-foreground hover:bg-brand/90"
@@ -226,6 +226,11 @@ export default function DashboardPage() {
                 Create an invoice
               </Link>
             }
+          />
+          <Button
+            nativeButton={false}
+            variant="outline"
+            render={<Link href="/analytics">View analytics</Link>}
           />
         </CardContent>
       </Card>

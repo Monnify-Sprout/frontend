@@ -18,6 +18,7 @@ import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api, apiErrorMessage } from '@/lib/api';
+import { BANKS, bankName } from '@/lib/banks';
 import {
   meResponseSchema,
   verificationInputSchema,
@@ -50,7 +51,20 @@ function VerifiedState({ merchant }: { merchant: Merchant }) {
           is ready to receive payments.
         </CardDescription>
       </CardHeader>
-      <CardContent className="flex justify-center">
+      <CardContent className="flex flex-col items-center gap-4">
+        {merchant.settlement_account_number && (
+          <div className="w-full rounded-lg border bg-muted/30 p-3 text-center text-sm">
+            <p className="text-xs text-muted-foreground">Payouts settle to</p>
+            <p className="font-medium">
+              <span className="font-mono">
+                {merchant.settlement_account_number}
+              </span>
+              {merchant.settlement_bank_name
+                ? ` · ${merchant.settlement_bank_name}`
+                : ''}
+            </p>
+          </div>
+        )}
         <Button
           nativeButton={false}
           className="bg-brand text-brand-foreground hover:bg-brand/90"
@@ -73,13 +87,25 @@ function VerificationForm({
 
   const form = useForm<VerificationInput>({
     resolver: zodResolver(verificationInputSchema),
-    defaultValues: { id_type: 'BVN', id_number: '' },
+    defaultValues: {
+      id_type: 'BVN',
+      id_number: '',
+      settlement_bank_code: '',
+      settlement_account_number: '',
+      settlement_account_name: '',
+    },
   });
   const idType = useWatch({ control: form.control, name: 'id_type' });
 
   const verify = useMutation({
     mutationFn: async (input: VerificationInput) => {
-      const res = await api.post('/api/verification', input);
+      // Send the bank name alongside its code so the merchant sees it back.
+      const payload = {
+        ...input,
+        settlement_bank_name: bankName(input.settlement_bank_code) ?? undefined,
+        settlement_account_name: input.settlement_account_name || undefined,
+      };
+      const res = await api.post('/api/verification', payload);
       return verificationResponseSchema.parse(res.data).merchant;
     },
     onSuccess: (updated) => {
@@ -165,6 +191,69 @@ function VerificationForm({
               Your number is used once for verification and never stored in full.
             </p>
           </Field>
+
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <p className="text-sm font-medium">Settlement account</p>
+            <p className="mb-4 text-xs text-muted-foreground">
+              Where your share of every payment is paid out. This is your own bank
+              account.
+            </p>
+            <div className="flex flex-col gap-4">
+              <Field>
+                <Label htmlFor="settlement_bank_code">Bank</Label>
+                <select
+                  id="settlement_bank_code"
+                  className={cn(
+                    'h-11 rounded-lg border bg-background px-3 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50',
+                    errors.settlement_bank_code && 'border-destructive',
+                  )}
+                  aria-invalid={!!errors.settlement_bank_code}
+                  {...form.register('settlement_bank_code')}
+                >
+                  <option value="">Select your bank</option>
+                  {BANKS.map((b) => (
+                    <option key={b.code} value={b.code}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+                <FieldError>{errors.settlement_bank_code?.message}</FieldError>
+              </Field>
+
+              <Field>
+                <Label htmlFor="settlement_account_number">Account number</Label>
+                <Input
+                  id="settlement_account_number"
+                  inputMode="numeric"
+                  maxLength={10}
+                  placeholder="10 digits"
+                  className="h-11"
+                  aria-invalid={!!errors.settlement_account_number}
+                  {...form.register('settlement_account_number')}
+                />
+                <FieldError>
+                  {errors.settlement_account_number?.message}
+                </FieldError>
+              </Field>
+
+              <Field>
+                <Label htmlFor="settlement_account_name">
+                  Account name{' '}
+                  <span className="font-normal text-muted-foreground">
+                    (optional)
+                  </span>
+                </Label>
+                <Input
+                  id="settlement_account_name"
+                  placeholder="As it appears at your bank"
+                  className="h-11"
+                  aria-invalid={!!errors.settlement_account_name}
+                  {...form.register('settlement_account_name')}
+                />
+                <FieldError>{errors.settlement_account_name?.message}</FieldError>
+              </Field>
+            </div>
+          </div>
 
           {verify.isError && (
             <p role="alert" className="text-sm text-destructive">

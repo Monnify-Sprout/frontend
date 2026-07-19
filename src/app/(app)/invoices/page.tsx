@@ -1,10 +1,12 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Lock, Plus, ReceiptText } from 'lucide-react';
+import { Lock, Plus, ReceiptText, Search } from 'lucide-react';
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardContent,
@@ -20,9 +22,21 @@ import {
   formatNaira,
   INVOICE_STATUS_STYLES,
 } from '@/lib/format';
-import { listInvoicesResponseSchema, meResponseSchema } from '@/lib/schemas';
+import {
+  listInvoicesResponseSchema,
+  meResponseSchema,
+  type InvoiceStatus,
+} from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+
+const STATUS_FILTERS: Array<'all' | InvoiceStatus> = [
+  'all',
+  'pending',
+  'paid',
+  'expired',
+  'cancelled',
+];
 
 // Shown to merchants who are not Active yet: invoice creation stays out of
 // reach until verification completes (Phase 6 acceptance).
@@ -74,6 +88,30 @@ export default function InvoicesPage() {
     enabled: active,
   });
 
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | InvoiceStatus>('all');
+
+  const filtered = useMemo(() => {
+    const items = invoices.data ?? [];
+    const q = search.trim().toLowerCase();
+    return items.filter((inv) => {
+      if (statusFilter !== 'all' && inv.status !== statusFilter) return false;
+      if (!q) return true;
+      const hay = [
+        inv.customer_name,
+        inv.customer_social_handle,
+        inv.customer_phone,
+        inv.customer_email,
+        inv.item,
+        inv.invoice_reference,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return hay.includes(q);
+    });
+  }, [invoices.data, search, statusFilter]);
+
   if (!merchant) return null;
 
   return (
@@ -121,25 +159,64 @@ export default function InvoicesPage() {
           </CardHeader>
         </Card>
       ) : (
-        <Card className="py-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b text-left text-xs text-muted-foreground">
-                  <th className="px-4 py-3 font-medium">Customer</th>
-                  <th className="px-4 py-3 font-medium">Amount</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="hidden px-4 py-3 font-medium sm:table-cell">
-                    Due
-                  </th>
-                  <th className="hidden px-4 py-3 font-medium sm:table-cell">
-                    Created
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.data!.map((inv) => (
-                  <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/40">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <div className="relative sm:max-w-xs sm:flex-1">
+              <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search customer, item, or reference"
+                className="h-10 pl-9"
+                aria-label="Search invoices"
+              />
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {STATUS_FILTERS.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(s)}
+                  aria-pressed={statusFilter === s}
+                  className={cn(
+                    'rounded-full border px-3 py-1 text-xs font-medium capitalize transition-colors',
+                    statusFilter === s
+                      ? 'border-brand bg-brand/10 text-brand'
+                      : 'border-input text-muted-foreground hover:bg-muted',
+                  )}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {filtered.length === 0 ? (
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                No invoices match your search.
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="py-0">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b text-left text-xs text-muted-foreground">
+                      <th className="px-4 py-3 font-medium">Customer</th>
+                      <th className="px-4 py-3 font-medium">Amount</th>
+                      <th className="px-4 py-3 font-medium">Status</th>
+                      <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                        Due
+                      </th>
+                      <th className="hidden px-4 py-3 font-medium sm:table-cell">
+                        Created
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((inv) => (
+                      <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/40">
                     <td className="px-4 py-3">
                       <Link
                         href={`/invoices/${inv.id}`}
@@ -170,12 +247,14 @@ export default function InvoicesPage() {
                     <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
                       {formatDateTime(inv.created_at)}
                     </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   );

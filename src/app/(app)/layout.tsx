@@ -19,8 +19,8 @@ import { useAuthStore } from '@/store/auth';
 const NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, ready: true },
   { label: 'Invoices', href: '/invoices', icon: ReceiptText, ready: true },
-  { label: 'Analytics', href: '/analytics', icon: ChartNoAxesColumn, ready: false },
-  { label: 'Connected', href: '/connected', icon: Link2, ready: false },
+  { label: 'Analytics', href: '/analytics', icon: ChartNoAxesColumn, ready: true },
+  { label: 'Connected', href: '/connected', icon: Link2, ready: true },
 ] as const;
 
 // Authenticated dashboard chrome, deliberately separate from the public
