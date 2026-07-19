@@ -88,4 +88,12 @@ Phase 7 (public payment page) is **complete and verified in-browser**:
 - Terminal states verified: paid (flips live on webhook, channels withdrawn by
   the backend), expired (server-side lazy expiry), cancelled, not-found.
 
+Pre-Phase-8 refinements (verified in-browser): the new-invoice form splits
+`item` (required) from `notes` (optional) and identifies the buyer by any one of
+name / Instagram handle / phone / email (name optional). Amounts group digits
+live in the input (`groupAmountInput`); `formatDateTime` shows created/paid with
+the time; `customerLabel` renders the best available buyer identifier across the
+list, detail, and pay page. Empty optional form fields are coerced to undefined
+in the schema so they don't fail their own format checks.
+
 Next: Phase 8 - analytics dashboard + connect-account UI.
