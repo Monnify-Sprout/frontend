@@ -96,25 +96,35 @@ export default function ConnectedPage() {
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Connected accounts
-        </h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Connected accounts</h1>
         <p className="text-sm text-muted-foreground">
-          Already collect on Monnify? Connect that account to see its analytics
-          alongside your Sprout sales.
+          Already collect on Monnify? Connect that account to see its analytics alongside
+          your Sprout sales.
         </p>
       </div>
 
       <div className="flex items-start gap-3 rounded-lg border border-brand/30 bg-brand/5 p-4 text-sm">
         <ShieldCheck className="mt-0.5 size-5 shrink-0 text-brand" />
         <p className="text-muted-foreground">
-          <span className="font-medium text-foreground">Read-only.</span> Sprout
-          only reads your transaction history to build analytics. It never moves
-          money, and you can disconnect at any time.
+          <span className="font-medium text-foreground">Read-only.</span> Sprout only
+          reads your transaction history to build analytics. It never moves money, and you
+          can disconnect at any time.
         </p>
       </div>
 
-      {list.length > 0 && (
+      {accounts.isPending ? (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            Loading connected accounts…
+          </CardContent>
+        </Card>
+      ) : accounts.isError ? (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-destructive">
+            Connected accounts could not be loaded. Refresh to try again.
+          </CardContent>
+        </Card>
+      ) : list.length > 0 ? (
         <div className="flex flex-col gap-3">
           {list.map((a) => (
             <Card key={a.id}>
@@ -141,9 +151,7 @@ export default function ConnectedPage() {
                 <div className="flex items-center gap-2">
                   {confirmingId === a.id ? (
                     <>
-                      <span className="text-xs text-muted-foreground">
-                        Disconnect?
-                      </span>
+                      <span className="text-xs text-muted-foreground">Disconnect?</span>
                       <Button
                         variant="destructive"
                         size="sm"
@@ -188,6 +196,13 @@ export default function ConnectedPage() {
             </Card>
           ))}
         </div>
+      ) : (
+        <Card>
+          <CardContent className="py-8 text-center text-sm text-muted-foreground">
+            No accounts connected yet. Add one below to see its analytics alongside your
+            Sprout sales.
+          </CardContent>
+        </Card>
       )}
 
       <Card>
@@ -197,8 +212,7 @@ export default function ConnectedPage() {
             <CardTitle className="text-base">Connect an account</CardTitle>
           </div>
           <CardDescription>
-            Enter the API key, secret key, and contract code from your Monnify
-            dashboard.
+            Enter the API key, secret key, and contract code from your Monnify dashboard.
           </CardDescription>
         </CardHeader>
         <CardContent>

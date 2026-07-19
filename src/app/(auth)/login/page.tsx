@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -13,15 +13,12 @@ import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { api, apiErrorMessage } from '@/lib/api';
-import {
-  loginInputSchema,
-  loginResponseSchema,
-  type LoginInput,
-} from '@/lib/schemas';
+import { loginInputSchema, loginResponseSchema, type LoginInput } from '@/lib/schemas';
 import { useAuthStore } from '@/store/auth';
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { token, hydrated, setSession } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -41,6 +38,9 @@ export default function LoginPage() {
       return loginResponseSchema.parse(res.data);
     },
     onSuccess: (data) => {
+      // Start clean: a previous session's cached queries (or those left behind
+      // by a 401 that cleared only the store) must not leak into this one.
+      queryClient.clear();
       setSession(data.token, data.merchant);
       router.replace('/dashboard');
     },
@@ -92,11 +92,7 @@ export default function LoginPage() {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {showPassword ? (
-                <EyeOff className="size-4" />
-              ) : (
-                <Eye className="size-4" />
-              )}
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           </div>
           <FieldError>{errors.password?.message}</FieldError>

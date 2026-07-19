@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -23,6 +23,7 @@ import { useAuthStore } from '@/store/auth';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { token, hydrated, setSession } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
 
@@ -53,6 +54,8 @@ export default function RegisterPage() {
       return loginResponseSchema.parse(logged.data);
     },
     onSuccess: (data) => {
+      // A brand-new session must not inherit any cached queries.
+      queryClient.clear();
       setSession(data.token, data.merchant);
       router.replace('/dashboard');
     },
@@ -62,9 +65,7 @@ export default function RegisterPage() {
 
   return (
     <div className="flex flex-col">
-      <h1 className="pb-1 text-4xl font-medium tracking-tight">
-        Create your account
-      </h1>
+      <h1 className="pb-1 text-4xl font-medium tracking-tight">Create your account</h1>
       <p className="text-muted-foreground">
         Start collecting payments and understanding your sales
       </p>
@@ -145,11 +146,7 @@ export default function RegisterPage() {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               className="absolute top-1/2 right-3 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              {showPassword ? (
-                <EyeOff className="size-4" />
-              ) : (
-                <Eye className="size-4" />
-              )}
+              {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
             </button>
           </div>
           <FieldError>{errors.password?.message}</FieldError>

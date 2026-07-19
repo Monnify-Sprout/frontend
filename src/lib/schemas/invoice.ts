@@ -4,12 +4,7 @@ import { emailSchema, phoneSchema } from './common';
 
 // Mirrors backend src/modules/invoices/* shapes.
 
-export const invoiceStatusSchema = z.enum([
-  'pending',
-  'paid',
-  'expired',
-  'cancelled',
-]);
+export const invoiceStatusSchema = z.enum(['pending', 'paid', 'expired', 'cancelled']);
 export const settlementPathSchema = z.enum(['split', 'manual']);
 
 export const invoiceSchema = z.object({
@@ -20,6 +15,7 @@ export const invoiceSchema = z.object({
   customer_email: z.string().nullable(),
   customer_phone: z.string().nullable(),
   customer_social_handle: z.string().nullable(),
+  customer_social_platform: z.string().nullable(),
   item: z.string().nullable(),
   notes: z.string().nullable(),
   amount: z.string(), // pg numeric arrives as a string
@@ -55,6 +51,15 @@ const socialHandleSchema = z
   .max(100)
   .regex(/^@?[a-zA-Z0-9._]+$/, 'Enter a valid handle, e.g. @chidi_styles');
 
+// The network the handle is on. Known keys plus free-typed "Other". Mirrors the
+// backend's socialPlatformField.
+const socialPlatformSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .max(30)
+  .regex(/^[a-zA-Z0-9 .&/_-]+$/, 'Enter a valid platform');
+
 // The form's untouched optional fields default to "" (not undefined), so treat a
 // blank field as absent before its validator runs - otherwise every empty
 // optional field would fail its own format check on submit.
@@ -73,6 +78,7 @@ export const createInvoiceInputSchema = z
     customer_phone: optional(phoneSchema),
     customer_email: optional(emailSchema),
     customer_social_handle: optional(socialHandleSchema),
+    customer_social_platform: optional(socialPlatformSchema),
     item: z.string().trim().min(1, 'Item is required').max(200),
     notes: optional(z.string().trim().max(500)),
     amount: z.coerce
@@ -87,9 +93,9 @@ export const createInvoiceInputSchema = z
     (v) =>
       Boolean(
         v.customer_name ||
-          v.customer_phone ||
-          v.customer_email ||
-          v.customer_social_handle,
+        v.customer_phone ||
+        v.customer_email ||
+        v.customer_social_handle,
       ),
     {
       message:
@@ -125,6 +131,7 @@ export const publicInvoiceSchema = z.object({
   business_name: z.string(),
   customer_name: z.string().nullable(),
   customer_social_handle: z.string().nullable(),
+  customer_social_platform: z.string().nullable(),
   item: z.string().nullable(),
   amount: z.string(),
   currency: z.string(),

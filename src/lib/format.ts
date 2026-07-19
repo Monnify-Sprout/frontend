@@ -33,17 +33,46 @@ export function formatDateTime(iso: string): string {
   });
 }
 
+// Known social platforms map to a nicely cased label; anything else (a
+// merchant's free-typed "Other") is shown as-typed.
+const SOCIAL_PLATFORM_LABELS: Record<string, string> = {
+  instagram: 'Instagram',
+  whatsapp: 'WhatsApp',
+  facebook: 'Facebook',
+  snapchat: 'Snapchat',
+};
+
+export function socialPlatformLabel(platform?: string | null): string | null {
+  if (!platform) return null;
+  const key = platform.trim().toLowerCase();
+  return SOCIAL_PLATFORM_LABELS[key] ?? platform.trim();
+}
+
+// The handle with its platform context, e.g. "@chidi_styles · Instagram".
+// Falls back to the bare handle when no platform was recorded.
+export function socialHandleLabel(
+  handle?: string | null,
+  platform?: string | null,
+): string | null {
+  if (!handle) return null;
+  const p = socialPlatformLabel(platform);
+  return p ? `${handle} · ${p}` : handle;
+}
+
 // A buyer may be identified by any one of these; show the first that exists.
 // Accepts anything with the customer_* fields (full invoice or public subset).
+// When the handle is the identifier we surface its platform too, since a
+// social-commerce buyer is often known only by "@handle on <network>".
 export function customerLabel(c: {
   customer_name?: string | null;
   customer_social_handle?: string | null;
+  customer_social_platform?: string | null;
   customer_phone?: string | null;
   customer_email?: string | null;
 }): string {
   return (
     c.customer_name ||
-    c.customer_social_handle ||
+    socialHandleLabel(c.customer_social_handle, c.customer_social_platform) ||
     c.customer_phone ||
     c.customer_email ||
     'Customer'
@@ -56,10 +85,8 @@ export function customerLabel(c: {
 export function groupAmountInput(raw: string): string {
   const cleaned = raw.replace(/[^\d.]/g, '');
   const firstDot = cleaned.indexOf('.');
-  const intDigits =
-    firstDot === -1 ? cleaned : cleaned.slice(0, firstDot);
-  const fraction =
-    firstDot === -1 ? '' : cleaned.slice(firstDot + 1).replace(/\./g, '');
+  const intDigits = firstDot === -1 ? cleaned : cleaned.slice(0, firstDot);
+  const fraction = firstDot === -1 ? '' : cleaned.slice(firstDot + 1).replace(/\./g, '');
   const grouped = intDigits ? Number(intDigits).toLocaleString('en-NG') : '';
   if (firstDot === -1) return grouped;
   return `${grouped || '0'}.${fraction.slice(0, 2)}`;

@@ -21,6 +21,7 @@ import {
   formatDateTime,
   formatNaira,
   INVOICE_STATUS_STYLES,
+  socialHandleLabel,
 } from '@/lib/format';
 import { invoiceDetailResponseSchema } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
@@ -60,9 +61,7 @@ export default function InvoiceDetailPage({
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Invoice</h1>
           {invoice && (
-            <p className="text-sm text-muted-foreground">
-              {invoice.invoice_reference}
-            </p>
+            <p className="text-sm text-muted-foreground">{invoice.invoice_reference}</p>
           )}
         </div>
       </div>
@@ -85,9 +84,7 @@ export default function InvoiceDetailPage({
             <CardHeader>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <CardTitle className="text-xl">
-                    {formatNaira(invoice.amount)}
-                  </CardTitle>
+                  <CardTitle className="text-xl">{formatNaira(invoice.amount)}</CardTitle>
                   <CardDescription>
                     {customerLabel(invoice)}
                     {invoice.item ? ` · ${invoice.item}` : ''}
@@ -113,6 +110,19 @@ export default function InvoiceDetailPage({
                   <dt className="text-xs text-muted-foreground">Buyer</dt>
                   <dd>{customerLabel(invoice)}</dd>
                 </div>
+                {/* When a name is the primary label, the handle+platform would
+                    be hidden - give it its own row so it is never lost. */}
+                {invoice.customer_name && invoice.customer_social_handle && (
+                  <div>
+                    <dt className="text-xs text-muted-foreground">Social</dt>
+                    <dd>
+                      {socialHandleLabel(
+                        invoice.customer_social_handle,
+                        invoice.customer_social_platform,
+                      )}
+                    </dd>
+                  </div>
+                )}
                 {invoice.notes && (
                   <div className="col-span-2">
                     <dt className="text-xs text-muted-foreground">Notes</dt>
@@ -128,9 +138,7 @@ export default function InvoiceDetailPage({
                   <dd>{invoice.due_date ? formatDate(invoice.due_date) : 'None'}</dd>
                 </div>
               </dl>
-              {invoice.status === 'pending' && (
-                <InvoiceShare invoice={invoice} />
-              )}
+              {invoice.status === 'pending' && <InvoiceShare invoice={invoice} />}
             </CardContent>
           </Card>
 
@@ -162,9 +170,7 @@ export default function InvoiceDetailPage({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-xs text-muted-foreground">
-                      Sprout commission
-                    </dt>
+                    <dt className="text-xs text-muted-foreground">Sprout commission</dt>
                     <dd className="font-medium">
                       {payment.commission_amount
                         ? formatNaira(payment.commission_amount)

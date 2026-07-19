@@ -49,8 +49,8 @@ function LockedState() {
         </span>
         <CardTitle className="text-xl">Invoicing is locked</CardTitle>
         <CardDescription>
-          Only verified, active merchants can create invoices. Verify your BVN
-          or NIN to unlock payments.
+          Only verified, active merchants can create invoices. Verify your BVN or NIN to
+          unlock payments.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex justify-center">
@@ -145,6 +145,12 @@ export default function InvoicesPage() {
             Loading invoices…
           </CardContent>
         </Card>
+      ) : invoices.isError ? (
+        <Card>
+          <CardContent className="py-10 text-center text-sm text-destructive">
+            Your invoices could not be loaded. Refresh to try again.
+          </CardContent>
+        </Card>
       ) : (invoices.data?.length ?? 0) === 0 ? (
         <Card>
           <CardHeader className="items-center gap-3 text-center">
@@ -153,8 +159,8 @@ export default function InvoicesPage() {
             </span>
             <CardTitle className="text-xl">No invoices yet</CardTitle>
             <CardDescription>
-              Your first invoice generates a virtual account and checkout link
-              your customer can pay into.
+              Your first invoice generates a virtual account and checkout link your
+              customer can pay into.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -206,9 +212,7 @@ export default function InvoicesPage() {
                       <th className="px-4 py-3 font-medium">Customer</th>
                       <th className="px-4 py-3 font-medium">Amount</th>
                       <th className="px-4 py-3 font-medium">Status</th>
-                      <th className="hidden px-4 py-3 font-medium sm:table-cell">
-                        Due
-                      </th>
+                      <th className="hidden px-4 py-3 font-medium sm:table-cell">Due</th>
                       <th className="hidden px-4 py-3 font-medium sm:table-cell">
                         Created
                       </th>
@@ -216,37 +220,40 @@ export default function InvoicesPage() {
                   </thead>
                   <tbody>
                     {filtered.map((inv) => (
-                      <tr key={inv.id} className="border-b last:border-0 hover:bg-muted/40">
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/invoices/${inv.id}`}
-                        className="font-medium text-foreground hover:text-brand"
+                      <tr
+                        key={inv.id}
+                        className="border-b last:border-0 hover:bg-muted/40"
                       >
-                        {customerLabel(inv)}
-                      </Link>
-                      <p className="text-xs text-muted-foreground">
-                        {inv.item ?? inv.invoice_reference}
-                      </p>
-                    </td>
-                    <td className="px-4 py-3 font-medium">
-                      {formatNaira(inv.amount)}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={cn(
-                          'inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize',
-                          INVOICE_STATUS_STYLES[inv.status],
-                        )}
-                      >
-                        {inv.status}
-                      </span>
-                    </td>
-                    <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                      {inv.due_date ? formatDate(inv.due_date) : 'None'}
-                    </td>
-                    <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
-                      {formatDateTime(inv.created_at)}
-                    </td>
+                        <td className="px-4 py-3">
+                          <Link
+                            href={`/invoices/${inv.id}`}
+                            className="font-medium text-foreground hover:text-brand"
+                          >
+                            {customerLabel(inv)}
+                          </Link>
+                          <p className="text-xs text-muted-foreground">
+                            {inv.item ?? inv.invoice_reference}
+                          </p>
+                        </td>
+                        <td className="px-4 py-3 font-medium">
+                          {formatNaira(inv.amount)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span
+                            className={cn(
+                              'inline-flex rounded-full px-2 py-0.5 text-xs font-medium capitalize',
+                              INVOICE_STATUS_STYLES[inv.status],
+                            )}
+                          >
+                            {inv.status}
+                          </span>
+                        </td>
+                        <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
+                          {inv.due_date ? formatDate(inv.due_date) : 'None'}
+                        </td>
+                        <td className="hidden px-4 py-3 text-muted-foreground sm:table-cell">
+                          {formatDateTime(inv.created_at)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>

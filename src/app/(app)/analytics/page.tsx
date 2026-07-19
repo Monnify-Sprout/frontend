@@ -108,11 +108,7 @@ export default function AnalyticsPage() {
       </div>
 
       {analytics.isPending ? (
-        <Card>
-          <CardContent className="py-12 text-center text-sm text-muted-foreground">
-            Loading analytics…
-          </CardContent>
-        </Card>
+        <AnalyticsSkeleton />
       ) : analytics.isError || !analytics.data ? (
         <Card>
           <CardContent className="py-12 text-center text-sm text-destructive">
@@ -122,6 +118,30 @@ export default function AnalyticsPage() {
       ) : (
         <AnalyticsView data={analytics.data} />
       )}
+    </div>
+  );
+}
+
+// Mirrors AnalyticsView's layout (3 stat tiles, trend, 3 breakdowns) so the
+// switch to real data doesn't reflow the page.
+function AnalyticsSkeleton() {
+  return (
+    <div
+      role="status"
+      aria-label="Loading analytics"
+      className="flex animate-pulse flex-col gap-4"
+    >
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-24 rounded-xl border bg-muted/40" />
+        ))}
+      </div>
+      <div className="h-56 rounded-xl border bg-muted/40" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="h-40 rounded-xl border bg-muted/40" />
+        ))}
+      </div>
     </div>
   );
 }

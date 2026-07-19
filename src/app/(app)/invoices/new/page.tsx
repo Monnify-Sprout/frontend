@@ -24,16 +24,25 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api, apiErrorMessage } from '@/lib/api';
 import { customerLabel, formatNaira, groupAmountInput } from '@/lib/format';
-import {
-  createInvoiceInputSchema,
-  createInvoiceResponseSchema,
-} from '@/lib/schemas';
+import { cn } from '@/lib/utils';
+import { createInvoiceInputSchema, createInvoiceResponseSchema } from '@/lib/schemas';
 import { useAuthStore } from '@/store/auth';
 
 // react-hook-form works with the schema's INPUT type (amount arrives as a
 // string from the field and is coerced by zod).
 type FormValues = z.input<typeof createInvoiceInputSchema>;
 type CreateResult = z.infer<typeof createInvoiceResponseSchema>;
+
+// Where a social-commerce buyer's handle lives. Known networks are stored under
+// their lowercase key; "other" reveals a field so the merchant can name any
+// network we don't list.
+const SOCIAL_PLATFORMS = [
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'whatsapp', label: 'WhatsApp' },
+  { value: 'facebook', label: 'Facebook' },
+  { value: 'snapchat', label: 'Snapchat' },
+  { value: 'other', label: 'Other' },
+] as const;
 
 function Confirmation({ result }: { result: CreateResult }) {
   const { invoice, settlement } = result;
@@ -45,8 +54,8 @@ function Confirmation({ result }: { result: CreateResult }) {
         </span>
         <CardTitle className="text-xl">Invoice created</CardTitle>
         <CardDescription>
-          Share these payment details with {customerLabel(invoice)}. The invoice
-          is marked paid automatically once Monnify confirms the payment.
+          Share these payment details with {customerLabel(invoice)}. The invoice is marked
+          paid automatically once Monnify confirms the payment.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -54,8 +63,7 @@ function Confirmation({ result }: { result: CreateResult }) {
           <p className="text-xs text-muted-foreground">Amount due</p>
           <p className="text-2xl font-semibold">{formatNaira(invoice.amount)}</p>
           <p className="text-xs text-muted-foreground">
-            {invoice.item ? `${invoice.item} · ` : ''}Ref{' '}
-            {invoice.invoice_reference}
+            {invoice.item ? `${invoice.item} · ` : ''}Ref {invoice.invoice_reference}
           </p>
         </div>
 
@@ -103,12 +111,33 @@ export default function NewInvoicePage() {
       customer_phone: '',
       customer_email: '',
       customer_social_handle: '',
+      customer_social_platform: '',
       item: '',
       notes: '',
       amount: '',
       due_date: '',
     },
   });
+
+  // Platform picker for the social handle. `platformChoice` is the selected pill
+  // ('' | a known key | 'other'); the value actually stored in the form field is
+  // the known key, or - for "other" - whatever the merchant types.
+  const [platformChoice, setPlatformChoice] = useState('');
+  const [customPlatform, setCustomPlatform] = useState('');
+
+  function selectPlatform(choice: string) {
+    const next = platformChoice === choice ? '' : choice; // click again to clear
+    setPlatformChoice(next);
+    form.setValue(
+      'customer_social_platform',
+      next === 'other' ? customPlatform.trim() : next,
+    );
+  }
+
+  function changeCustomPlatform(value: string) {
+    setCustomPlatform(value);
+    form.setValue('customer_social_platform', value.trim());
+  }
 
   const create = useMutation({
     mutationFn: async (input: FormValues) => {
@@ -118,6 +147,10 @@ export default function NewInvoicePage() {
         customer_phone: input.customer_phone || undefined,
         customer_email: input.customer_email || undefined,
         customer_social_handle: input.customer_social_handle || undefined,
+        // A platform only travels with a handle it belongs to.
+        customer_social_platform: input.customer_social_handle
+          ? input.customer_social_platform || undefined
+          : undefined,
         item: input.item,
         notes: input.notes || undefined,
         amount: input.amount,
@@ -169,9 +202,7 @@ export default function NewInvoicePage() {
               noValidate
             >
               <fieldset className="flex flex-col gap-5">
-                <legend className="mb-1 text-sm font-medium">
-                  What they bought
-                </legend>
+                {/* <legend className="mb-1 text-sm font-medium">What they bought</legend> */}
 
                 <Field>
                   <Label htmlFor="item">Item</Label>
@@ -188,9 +219,7 @@ export default function NewInvoicePage() {
                 <Field>
                   <Label htmlFor="notes">
                     Notes{' '}
-                    <span className="font-normal text-muted-foreground">
-                      (optional)
-                    </span>
+                    <span className="font-normal text-muted-foreground">(optional)</span>
                   </Label>
                   <Textarea
                     id="notes"
@@ -205,9 +234,64 @@ export default function NewInvoicePage() {
               <fieldset className="flex flex-col gap-5">
                 <legend className="text-sm font-medium">Buyer</legend>
                 <p className="-mt-1 text-xs text-muted-foreground">
-                  Identify the buyer by at least one of the following. A name is
-                  not required if you only know their handle or number.
+                  Identify the buyer by at least one of the following. A name is not
+                  required if you only know their handle or number.
                 </p>
+
+                {/* The handle is the primary identifier for Instagram/WhatsApp
+                    vendors, so it leads and spans the full width - room for the
+                    platform picker above the handle itself. */}
+                <Field>
+                  <Label htmlFor="customer_social_handle">
+                    Social handle{' '}
+                    <span className="font-normal text-muted-foreground">(optional)</span>
+                  </Label>
+                  <div
+                    className="flex flex-wrap gap-2"
+                    role="group"
+                    aria-label="Platform"
+                  >
+                    {SOCIAL_PLATFORMS.map((p) => {
+                      const selected = platformChoice === p.value;
+                      return (
+                        <button
+                          key={p.value}
+                          type="button"
+                          aria-pressed={selected}
+                          onClick={() => selectPlatform(p.value)}
+                          className={cn(
+                            'rounded-full border px-3 py-1.5 text-sm font-medium transition-colors',
+                            selected
+                              ? 'border-brand bg-brand text-brand-foreground'
+                              : 'border-input bg-background text-muted-foreground hover:bg-muted hover:text-foreground',
+                          )}
+                        >
+                          {p.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {platformChoice === 'other' && (
+                    <Input
+                      aria-label="Platform name"
+                      placeholder="Which platform?"
+                      className="h-11"
+                      value={customPlatform}
+                      onChange={(e) => changeCustomPlatform(e.target.value)}
+                    />
+                  )}
+                  <Input
+                    id="customer_social_handle"
+                    placeholder={
+                      platformChoice === 'whatsapp' ? '08012345678' : '@chidi_styles'
+                    }
+                    className="h-11"
+                    aria-invalid={!!errors.customer_social_handle}
+                    {...form.register('customer_social_handle')}
+                  />
+                  <FieldError>{errors.customer_social_handle?.message}</FieldError>
+                  <FieldError>{errors.customer_social_platform?.message}</FieldError>
+                </Field>
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <Field>
@@ -224,25 +308,6 @@ export default function NewInvoicePage() {
                       aria-invalid={!!errors.customer_name}
                       {...form.register('customer_name')}
                     />
-                  </Field>
-
-                  <Field>
-                    <Label htmlFor="customer_social_handle">
-                      Instagram / social handle{' '}
-                      <span className="font-normal text-muted-foreground">
-                        (optional)
-                      </span>
-                    </Label>
-                    <Input
-                      id="customer_social_handle"
-                      placeholder="@chidi_styles"
-                      className="h-11"
-                      aria-invalid={!!errors.customer_social_handle}
-                      {...form.register('customer_social_handle')}
-                    />
-                    <FieldError>
-                      {errors.customer_social_handle?.message}
-                    </FieldError>
                   </Field>
 
                   <Field>
@@ -263,7 +328,7 @@ export default function NewInvoicePage() {
                     <FieldError>{errors.customer_phone?.message}</FieldError>
                   </Field>
 
-                  <Field>
+                  <Field className="sm:col-span-2">
                     <Label htmlFor="customer_email">
                       Email{' '}
                       <span className="font-normal text-muted-foreground">
@@ -312,9 +377,7 @@ export default function NewInvoicePage() {
                 <Field>
                   <Label htmlFor="due_date">
                     Due date{' '}
-                    <span className="font-normal text-muted-foreground">
-                      (optional)
-                    </span>
+                    <span className="font-normal text-muted-foreground">(optional)</span>
                   </Label>
                   <Input
                     id="due_date"

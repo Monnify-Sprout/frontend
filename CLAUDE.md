@@ -90,10 +90,14 @@ Phase 7 (public payment page) is **complete and verified in-browser**:
 
 Pre-Phase-8 refinements (verified in-browser): the new-invoice form splits
 `item` (required) from `notes` (optional) and identifies the buyer by any one of
-name / Instagram handle / phone / email (name optional). Amounts group digits
+social handle / name / phone / email (name optional). The social-handle field
+leads the Buyer section full-width with a platform picker (Instagram / WhatsApp /
+Facebook / Snapchat / Other-typed) whose choice is stored in
+`customer_social_platform` (sent only with a handle). Amounts group digits
 live in the input (`groupAmountInput`); `formatDateTime` shows created/paid with
 the time; `customerLabel` renders the best available buyer identifier across the
-list, detail, and pay page. Empty optional form fields are coerced to undefined
+list, detail, and pay page, appending the platform via `socialHandleLabel` when
+the handle is the identifier. Empty optional form fields are coerced to undefined
 in the schema so they don't fail their own format checks.
 
 Phase 8 (analytics + connected-account UI) is **complete and verified
@@ -111,4 +115,20 @@ in-browser**:
 - Settlement account collected on `/verify` (curated bank list in
   `src/lib/banks.ts`); the verified state shows where payouts settle.
 
-Next: Phase 9a - seed script + demo rehearsal.
+Phase 9b (polish + demo rehearsal) is **complete and verified in-browser**:
+- Loading/error/empty states rounded out: analytics has a layout-matching
+  skeleton while loading; the invoices list and the connected-accounts list each
+  distinguish loading vs error vs empty (a failed fetch no longer masquerades as
+  "nothing here"); the connected list shows an explicit empty state.
+- **Fixed a cross-account cache leak**: React Query's cache was never cleared on
+  logout, so a second merchant signing in briefly saw the previous merchant's
+  cached invoices/analytics. `queryClient.clear()` now runs on logout and on
+  login/register success (the latter also covers a 401 that cleared only the
+  store). If you add new session entry/exit points, clear the query cache there.
+- PRD §13's nine-step demo was run start to finish against `npm run seed` data
+  with no manual DB edits: live onboarding (pending -> Active + sub-account),
+  a ₦10,000 invoice paid via a signed webhook (split recorded), the merchant's
+  own analytics, and the same view rendering for the connected account.
+
+Next: nothing outstanding for the hackathon demo path. Roadmap items (categories,
+static links, branches, invoice side-sheet) are optional follow-ups.

@@ -1,5 +1,6 @@
 'use client';
 
+import { useQueryClient } from '@tanstack/react-query';
 import {
   ChartNoAxesColumn,
   LayoutDashboard,
@@ -26,11 +27,10 @@ const NAV = [
 // Authenticated dashboard chrome, deliberately separate from the public
 // invoice-payment and auth layouts (build plan Phase 5: no shared chrome).
 // Desktop gets a sidebar; mobile keeps navigation via a bottom tab bar.
-export default function AppLayout({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
   const pathname = usePathname();
+  const queryClient = useQueryClient();
   const { merchant, clear } = useAuthStore();
   const isActive = (href: string) => pathname.startsWith(href);
 
@@ -82,17 +82,16 @@ export default function AppLayout({
               <Logo compact />
             </div>
             <div className="hidden min-w-0 md:block">
-              <p className="truncate text-sm font-medium">
-                {merchant?.business_name}
-              </p>
-              <p className="truncate text-xs text-muted-foreground">
-                {merchant?.email}
-              </p>
+              <p className="truncate text-sm font-medium">{merchant?.business_name}</p>
+              <p className="truncate text-xs text-muted-foreground">{merchant?.email}</p>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={() => {
+                // Drop every cached query so the next merchant to sign in never
+                // sees the previous session's data (invoices, analytics, etc.).
+                queryClient.clear();
                 clear();
                 router.replace('/login');
               }}
