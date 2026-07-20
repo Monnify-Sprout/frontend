@@ -15,7 +15,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import type { Category, Invoice, InvoiceStatus } from '@/lib/schemas';
+import type { Category, Invoice, InvoiceStatus, Stream } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 
 // Structured invoice filters. Applied client-side over the already-fetched list
@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 export interface InvoiceFilters {
   statuses: InvoiceStatus[];
   categories: string[]; // category ids; empty = any
+  streams: string[]; // stream ids; empty = any
   createdFrom: string; // '' = unset, otherwise YYYY-MM-DD
   createdTo: string;
   dueFrom: string;
@@ -38,6 +39,7 @@ export interface InvoiceFilters {
 export const EMPTY_FILTERS: InvoiceFilters = {
   statuses: [],
   categories: [],
+  streams: [],
   createdFrom: '',
   createdTo: '',
   dueFrom: '',
@@ -56,6 +58,7 @@ export function countActiveFilters(f: InvoiceFilters): number {
   let n = 0;
   if (f.statuses.length > 0) n += 1;
   if (f.categories.length > 0) n += 1;
+  if (f.streams.length > 0) n += 1;
   if (f.createdFrom || f.createdTo) n += 1;
   if (f.dueFrom || f.dueTo) n += 1;
   if (f.paidFrom || f.paidTo) n += 1;
@@ -84,6 +87,11 @@ export function applyInvoiceFilters(
     // A category filter matches only invoices tagged with one of the selected
     // categories (uncategorised invoices are excluded when any is selected).
     if (f.categories.length > 0 && !(inv.category_id && f.categories.includes(inv.category_id)))
+      return false;
+
+    // Same rule for streams (Phase 13): unassigned invoices are excluded when
+    // any stream is selected.
+    if (f.streams.length > 0 && !(inv.stream_id && f.streams.includes(inv.stream_id)))
       return false;
 
     const created = dayOf(inv.created_at);
@@ -182,10 +190,12 @@ export function InvoiceFilterDialog({
   value,
   onApply,
   categories = [],
+  streams = [],
 }: {
   value: InvoiceFilters;
   onApply: (f: InvoiceFilters) => void;
   categories?: Category[];
+  streams?: Stream[];
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<InvoiceFilters>(value);
@@ -215,6 +225,14 @@ export function InvoiceFilterDialog({
       categories: d.categories.includes(id)
         ? d.categories.filter((x) => x !== id)
         : [...d.categories, id],
+    }));
+
+  const toggleStream = (id: string) =>
+    setDraft((d) => ({
+      ...d,
+      streams: d.streams.includes(id)
+        ? d.streams.filter((x) => x !== id)
+        : [...d.streams, id],
     }));
 
   const apply = () => {
@@ -294,6 +312,33 @@ export function InvoiceFilterDialog({
                         style={{ backgroundColor: c.color }}
                       />
                       {c.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {streams.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <SectionLabel>Stream</SectionLabel>
+              <div className="flex flex-wrap gap-2">
+                {streams.map((s) => {
+                  const on = draft.streams.includes(s.id);
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      onClick={() => toggleStream(s.id)}
+                      aria-pressed={on}
+                      className={cn(
+                        'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
+                        on
+                          ? 'border-brand bg-brand text-brand-foreground'
+                          : 'border-input text-muted-foreground hover:border-brand/40 hover:bg-muted',
+                      )}
+                    >
+                      {s.name}
                     </button>
                   );
                 })}

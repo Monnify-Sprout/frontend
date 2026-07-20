@@ -38,6 +38,9 @@ export const analyticsResponseSchema = z.object({
     .nullable(),
   // Merchant-only sales-by-payment-link (Phase 12); null for a connected account.
   by_link: z.array(bucketSchema.extend({ link: z.string() })).nullable(),
+  // Merchant-only sales-by-stream (Phase 13); null for a connected account.
+  // Covers invoices AND link collections; unassigned sales bucket as "Unassigned".
+  by_stream: z.array(bucketSchema.extend({ stream: z.string() })).nullable(),
   // Merchant-only invoice funnel; null for a connected account.
   funnel: z
     .object({

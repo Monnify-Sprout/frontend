@@ -16,6 +16,7 @@ export const paymentLinkSchema = z.object({
   currency: z.string(),
   status: paymentLinkStatusSchema,
   category_id: z.string().nullable(),
+  stream_id: z.string().nullable(),
   reserved_account_reference: z.string().nullable(),
   reserved_account_number: z.string().nullable(),
   reserved_account_bank_name: z.string().nullable(),
@@ -25,6 +26,8 @@ export const paymentLinkSchema = z.object({
   // Joined category (list/detail); optional as well as nullable.
   category_name: z.string().nullable().optional(),
   category_color: z.string().nullable().optional(),
+  // Joined stream (Phase 13); optional as well as nullable.
+  stream_name: z.string().nullable().optional(),
   // Collection rollups from the list query; undefined on the create response.
   collection_count: z.number().optional(),
   total_collected: z.string().optional(),
@@ -124,6 +127,7 @@ export const createPaymentLinkFormSchema = z
       z.coerce.number().positive('Amount must be greater than 0').max(1_000_000_000),
     ),
     category_id: optional(z.string().uuid('Invalid category')),
+    stream_id: optional(z.string().uuid('Invalid stream')),
   })
   .superRefine((v, ctx) => {
     if (v.mode === 'fixed' && v.amount == null) {

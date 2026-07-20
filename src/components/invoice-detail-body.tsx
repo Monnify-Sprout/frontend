@@ -83,6 +83,12 @@ export function InvoiceDetailBody({
                 </dd>
               </div>
             )}
+            {invoice.stream_name && (
+              <div>
+                <dt className="text-xs text-muted-foreground">Stream</dt>
+                <dd>{invoice.stream_name}</dd>
+              </div>
+            )}
             {invoice.notes && (
               <div className="col-span-2">
                 <dt className="text-xs text-muted-foreground">Notes</dt>

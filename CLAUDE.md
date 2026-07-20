@@ -204,6 +204,53 @@ Phase 12 (static payment links) is **complete and verified in-browser**
   `lib/schemas/payment-link.ts` + `by_link` on `analytics.ts`; status styles +
   `formatLinkAmount` in `lib/format.ts`.
 
-Next: nothing outstanding for the hackathon demo path. Remaining roadmap items
-(merchant branches, invoice side-sheet) are optional follow-ups; the Dialog
-primitive is the groundwork for the side-sheet.
+Invoice side-sheet + row-level table clicks (quick win) is **complete and
+verified in-browser** (2026-07-20):
+- New base-nova `Sheet` primitive (`components/ui/sheet.tsx`): the same
+  `@base-ui/react/dialog` as `components/ui/dialog.tsx` but pinned to the right
+  edge (`inset-y-0 right-0`) with a `translate-x` enter/leave transition. Kept
+  separate from `Dialog` so the centred filter modal and this detail peek stay
+  visually distinct. A slide-over was chosen over a modal for peeking at rows
+  without losing list scroll position.
+- The invoice detail cards were extracted verbatim into a shared
+  `InvoiceDetailBody` (`components/invoice-detail-body.tsx`), now rendered by BOTH
+  `/invoices/[id]` and the new `InvoiceSheet` (`components/invoice-sheet.tsx`).
+  The sheet reuses the SAME `['invoices', id]` React Query key as the full page,
+  so the "Open full page" link opens instantly off shared cache.
+- Clicking an invoice row opens the sheet instead of navigating. Whole rows are
+  clickable AND keyboard-accessible (Enter/Space) on both the invoices and
+  payment-links tables via `rowActivate` in `lib/utils.ts` (rows render as
+  `role="button"` + an `aria-label`; the first-cell text is now a plain span, not
+  a `<Link>`). The payment-links row uses `router.push` to
+  `/invoices/links/[id]`. The link-detail collections table is left
+  non-clickable on purpose - it has no per-row destination.
+
+Phase 13 (revenue streams) is **complete and verified in-browser** (2026-07-20):
+- "Streams" = where (or through whom) a sale came from: a shop branch, a market
+  stall, the Instagram page, a sales rep, a pop-up, a second brand. The name was
+  chosen over "branches" because the dimension covers far more than physical
+  branches (and "sub-account" was already taken by Monnify's concept). A stream
+  is tracking-only until a settlement account is attached, which ROUTES its
+  revenue to its own bank account via its own Monnify sub-account.
+- `/streams` manager (`app/(app)/streams/page.tsx`): create/edit with a
+  "Settles to its own account" checkbox revealing bank picker (from
+  `lib/banks.ts`) + NUBAN + account-name fields; rows show invoice/link counts,
+  total collected across both products, a routed line ("Settles to Access Bank
+  ····4321" with a Landmark icon) or "Settles to your main account", an ARCHIVED
+  badge, Archive/Restore, and Delete only when unused. New `Streams` nav item
+  (Waypoints icon) between Categories and Connected.
+- Shared `StreamPicker` (`components/stream-picker.tsx`): None + pill per ACTIVE
+  stream (archived ones excluded; routed ones carry a small Landmark icon), used
+  by the invoice form (inside "Add more details") and the payment-link form.
+  `stream_id` rides both create payloads.
+- Invoice detail/sheet shows a Stream row (`invoice-detail-body.tsx`); the link
+  detail rail shows one too. The invoice filter modal gained a Stream section
+  (`InvoiceFilters.streams: string[]`); search also matches `stream_name`.
+- `AnalyticsView` gained a merchant-only "By stream" `BreakdownCard` fed by
+  `by_stream` - hidden until at least one non-"Unassigned" row exists, so a
+  merchant with no streams never sees a one-row card.
+- Schema mirror in `lib/schemas/stream.ts` (streamSchema + `streamFormSchema`
+  with a form-only `routed` flag); `stream_id`/`stream_name` on invoice +
+  payment-link schemas; `by_stream` on analytics.
+
+Next: nothing outstanding - the full roadmap through Phase 13 is built.

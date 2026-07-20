@@ -34,6 +34,7 @@ import {
 import {
   listCategoriesResponseSchema,
   listInvoicesResponseSchema,
+  listStreamsResponseSchema,
   meResponseSchema,
 } from '@/lib/schemas';
 import { cn, rowActivate } from '@/lib/utils';
@@ -98,6 +99,15 @@ export default function InvoicesPage() {
     enabled: active,
   });
 
+  const streams = useQuery({
+    queryKey: ['streams'],
+    queryFn: async () => {
+      const res = await api.get('/api/streams');
+      return listStreamsResponseSchema.parse(res.data).streams;
+    },
+    enabled: active,
+  });
+
 
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<InvoiceFilters>(EMPTY_FILTERS);
@@ -124,6 +134,7 @@ export default function InvoicesPage() {
         inv.customer_email,
         inv.item,
         inv.category_name,
+        inv.stream_name,
         inv.invoice_reference,
       ]
         .filter(Boolean)
@@ -207,6 +218,7 @@ export default function InvoicesPage() {
                 value={filters}
                 onApply={setFilters}
                 categories={categories.data ?? []}
+                streams={streams.data ?? []}
               />
               {narrowed && (
                 <Button

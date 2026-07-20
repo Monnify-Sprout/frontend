@@ -23,6 +23,7 @@ export const invoiceSchema = z.object({
   due_date: z.string().nullable(),
   status: invoiceStatusSchema,
   category_id: z.string().nullable(),
+  stream_id: z.string().nullable(),
   virtual_account_number: z.string().nullable(),
   checkout_url: z.string().nullable(),
   monnify_transaction_reference: z.string().nullable(),
@@ -37,6 +38,8 @@ export const invoiceSchema = z.object({
   // create/public responses omit them, so they are optional as well as nullable.
   category_name: z.string().nullable().optional(),
   category_color: z.string().nullable().optional(),
+  // Same for the joined stream (Phase 13).
+  stream_name: z.string().nullable().optional(),
 });
 
 export const paymentSchema = z.object({
@@ -99,6 +102,8 @@ export const createInvoiceInputSchema = z
     ),
     // Optional merchant category (Phase 11); the picker sends the category id.
     category_id: optional(z.string().uuid('Invalid category')),
+    // Optional revenue stream (Phase 13); the picker sends the stream id.
+    stream_id: optional(z.string().uuid('Invalid stream')),
   })
   .refine(
     (v) =>

@@ -345,6 +345,17 @@ export function AnalyticsView({ data }: { data: AnalyticsResponse }) {
       count: l.count,
       amount: l.amount,
     })) ?? null;
+  const streamRows: Row[] | null =
+    data.by_stream?.map((s) => ({
+      label: s.stream,
+      count: s.count,
+      amount: s.amount,
+    })) ?? null;
+  // With no streams defined, every sale is one "Unassigned" row - hide the card
+  // until the dimension is actually in use.
+  const streamsInUse =
+    streamRows !== null &&
+    streamRows.some((r) => r.label !== 'Unassigned');
 
   return (
     <div className="flex flex-col gap-4">
@@ -394,6 +405,13 @@ export function AnalyticsView({ data }: { data: AnalyticsResponse }) {
             title="By payment link"
             description="Revenue per reusable link"
             rows={linkRows}
+          />
+        )}
+        {streamsInUse && streamRows && (
+          <BreakdownCard
+            title="By stream"
+            description="Where your sales come from"
+            rows={streamRows}
           />
         )}
         <BreakdownCard

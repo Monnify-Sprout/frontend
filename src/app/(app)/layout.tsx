@@ -8,6 +8,7 @@ import {
   LogOut,
   ReceiptText,
   Tag,
+  Waypoints,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -23,6 +24,7 @@ const NAV = [
   { label: 'Invoices', href: '/invoices', icon: ReceiptText, ready: true },
   { label: 'Analytics', href: '/analytics', icon: ChartNoAxesColumn, ready: true },
   { label: 'Categories', href: '/categories', icon: Tag, ready: true },
+  { label: 'Streams', href: '/streams', icon: Waypoints, ready: true },
   { label: 'Connected', href: '/connected', icon: Link2, ready: true },
 ] as const;
 
