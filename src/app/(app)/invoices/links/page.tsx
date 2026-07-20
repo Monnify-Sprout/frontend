@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link2, Lock, Plus } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 import { InvoiceTabs } from '@/components/invoice-tabs';
 import { Button } from '@/components/ui/button';
@@ -25,7 +26,7 @@ import {
   meResponseSchema,
   type LinkStatusSummary,
 } from '@/lib/schemas';
-import { cn } from '@/lib/utils';
+import { cn, rowActivate } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 // Non-active merchants can't collect yet: link creation stays locked until
@@ -89,6 +90,7 @@ function SummaryCards({ summary }: { summary: LinkStatusSummary }) {
 }
 
 export default function PaymentLinksPage() {
+  const router = useRouter();
   const { merchant: cached, setMerchant } = useAuthStore();
 
   const me = useQuery({
@@ -196,15 +198,14 @@ export default function PaymentLinksPage() {
                     {links.data.links.map((l) => (
                       <tr
                         key={l.id}
-                        className="border-b last:border-0 hover:bg-muted/40"
+                        {...rowActivate(() => router.push(`/invoices/links/${l.id}`))}
+                        aria-label={`Open payment link ${l.title}`}
+                        className="group cursor-pointer border-b last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
                       >
                         <td className="px-4 py-3">
-                          <Link
-                            href={`/invoices/links/${l.id}`}
-                            className="font-medium text-foreground hover:text-brand"
-                          >
+                          <span className="font-medium text-foreground group-hover:text-brand">
                             {l.title}
-                          </Link>
+                          </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                             <span>{l.item ?? l.slug}</span>
                             {l.category_name && (

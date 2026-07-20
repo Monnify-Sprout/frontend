@@ -19,18 +19,20 @@ export function InvoiceTabs() {
   const onLinks = pathname.startsWith('/invoices/links');
 
   return (
-    <div className="inline-flex rounded-lg border bg-muted/40 p-1">
+    // <div className="inline-flex rounded-lg border bg-muted/40 p-1">
+    <div className="flex border-b border-border">
       {TABS.map((t) => {
         const active = t.href === '/invoices/links' ? onLinks : !onLinks;
+
         return (
           <Link
             key={t.href}
             href={t.href}
             className={cn(
-              'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+              '-mb-px border-b-2 px-4 py-2.5 text-sm font-medium transition-colors',
               active
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'border-brand text-brand'
+                : 'border-transparent text-muted-foreground hover:text-foreground',
             )}
           >
             {t.label}
@@ -38,5 +40,6 @@ export function InvoiceTabs() {
         );
       })}
     </div>
+    // </div>
   );
 }

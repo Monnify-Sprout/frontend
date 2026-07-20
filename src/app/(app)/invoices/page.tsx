@@ -12,6 +12,7 @@ import {
   InvoiceFilterDialog,
   type InvoiceFilters,
 } from '@/components/invoice-filters';
+import { InvoiceSheet } from '@/components/invoice-sheet';
 import { InvoiceTabs } from '@/components/invoice-tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +36,7 @@ import {
   listInvoicesResponseSchema,
   meResponseSchema,
 } from '@/lib/schemas';
-import { cn } from '@/lib/utils';
+import { cn, rowActivate } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
 
 // Shown to merchants who are not Active yet: invoice creation stays out of
@@ -97,9 +98,19 @@ export default function InvoicesPage() {
     enabled: active,
   });
 
+
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<InvoiceFilters>(EMPTY_FILTERS);
   const activeFilters = countActiveFilters(filters);
+
+  // Clicking a row opens the invoice in a slide-over sheet instead of navigating
+  // away; the id is kept for one render after close so the sheet can animate out.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const openInvoice = (id: string) => {
+    setSelectedId(id);
+    setSheetOpen(true);
+  };
 
   const filtered = useMemo(() => {
     const structured = applyInvoiceFilters(invoices.data ?? [], filters);
@@ -247,15 +258,14 @@ export default function InvoicesPage() {
                     {filtered.map((inv) => (
                       <tr
                         key={inv.id}
-                        className="border-b last:border-0 hover:bg-muted/40"
+                        {...rowActivate(() => openInvoice(inv.id))}
+                        aria-label={`Open invoice for ${customerLabel(inv)}`}
+                        className="group cursor-pointer border-b last:border-0 hover:bg-muted/40 focus-visible:bg-muted/40 focus-visible:outline-none"
                       >
                         <td className="px-4 py-3">
-                          <Link
-                            href={`/invoices/${inv.id}`}
-                            className="font-medium text-foreground hover:text-brand"
-                          >
+                          <span className="font-medium text-foreground group-hover:text-brand">
                             {customerLabel(inv)}
-                          </Link>
+                          </span>
                           <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                             <span>{inv.item ?? inv.invoice_reference}</span>
                             {inv.category_name && (
@@ -302,6 +312,12 @@ export default function InvoicesPage() {
           )}
         </div>
       )}
+
+      <InvoiceSheet
+        invoiceId={selectedId}
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+      />
     </div>
   );
 }
