@@ -297,7 +297,7 @@ export default function NewInvoicePage() {
   );
 
   const phoneField = (
-    <Field>
+    <Field className="sm:col-span-2">
       <Label htmlFor="customer_phone">
         Phone <span className="font-normal text-muted-foreground">(optional)</span>
       </Label>
@@ -581,11 +581,6 @@ export default function NewInvoicePage() {
                     )}
                   />
                   Add more details
-                  <span className="font-normal text-muted-foreground">
-                    {variant === 'lean'
-                      ? '(more contacts, category, stream, due date, notes)'
-                      : '(category, stream, due date, notes)'}
-                  </span>
                   {filledCount > 0 && (
                     <span className="ml-auto rounded-full bg-brand/10 px-2 py-0.5 text-xs font-medium text-brand">
                       {filledCount} added
