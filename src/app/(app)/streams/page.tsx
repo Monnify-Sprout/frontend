@@ -466,9 +466,9 @@ export default function StreamsPage() {
       {list.length >= MAX_STREAMS ? (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
-            You have reached the limit of {MAX_STREAMS} streams. Archive or delete one
-            to add another. Create a stream only when you want a separate account for
-            part of your business.
+            You have reached the limit of {MAX_STREAMS} streams. Delete one to add
+            another. Create a stream only when you want a separate account for part of
+            your business.
           </CardContent>
         </Card>
       ) : (

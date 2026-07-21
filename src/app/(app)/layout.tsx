@@ -26,9 +26,17 @@ const NAV = [
   { label: 'Invoices', href: '/invoices', icon: ReceiptText, ready: true },
   { label: 'Analytics', href: '/analytics', icon: ChartNoAxesColumn, ready: true },
   { label: 'Categories', href: '/categories', icon: Tag, ready: true },
-  { label: 'Streams', href: '/streams', icon: Waypoints, ready: true },
   { label: 'Connected', href: '/connected', icon: Link2, ready: true },
 ] as const;
+
+// Streams is a workspace concept (set from the header switcher), not a content
+// page, so it sits apart from the primary nav - pinned to the bottom of the
+// sidebar and set off in the mobile bar.
+const STREAMS_NAV = {
+  label: 'Streams',
+  href: '/streams',
+  icon: Waypoints,
+} as const;
 
 // Authenticated dashboard chrome, deliberately separate from the public
 // invoice-payment and auth layouts (build plan Phase 5: no shared chrome).
@@ -80,6 +88,23 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
                 </span>
               ),
             )}
+
+            {/* Streams sits apart at the bottom - it is the workspace, not a
+                content page (switch streams from the header). */}
+            <div className="mt-auto flex flex-col gap-1 border-t pt-3">
+              <Link
+                href={STREAMS_NAV.href}
+                className={cn(
+                  'flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  isActive(STREAMS_NAV.href)
+                    ? 'bg-brand/10 text-brand'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                )}
+              >
+                <STREAMS_NAV.icon className="size-4" />
+                {STREAMS_NAV.label}
+              </Link>
+            </div>
           </nav>
         </aside>
 
@@ -137,6 +162,17 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
             </span>
           ),
         )}
+        {/* Streams set off from the content tabs by a divider. */}
+        <Link
+          href={STREAMS_NAV.href}
+          className={cn(
+            'flex flex-1 flex-col items-center gap-1 border-l py-2.5',
+            isActive(STREAMS_NAV.href) ? 'text-brand' : 'text-muted-foreground',
+          )}
+        >
+          <STREAMS_NAV.icon className="size-5" />
+          <span className="text-[10px] font-medium">{STREAMS_NAV.label}</span>
+        </Link>
       </nav>
     </AuthGuard>
   );
