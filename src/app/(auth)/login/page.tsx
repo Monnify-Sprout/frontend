@@ -55,6 +55,28 @@ export default function LoginPage() {
         Please enter your details to access your account
       </p>
 
+      {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+        <div className="mt-6 flex flex-col gap-2 rounded-lg border border-dashed border-brand/40 bg-brand/5 p-3 text-sm">
+          <p className="font-medium">Just exploring?</p>
+          <p className="text-muted-foreground">
+            Sign in to a ready-made account with sample invoices, payment links and
+            analytics already populated.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="self-start"
+            disabled={login.isPending}
+            onClick={() =>
+              login.mutate({ email: 'demo@sprout.test', password: 'SproutDemo2026!' })
+            }
+          >
+            {login.isPending ? 'Signing in…' : 'Sign in as demo merchant'}
+          </Button>
+        </div>
+      )}
+
       <form
         className="mt-8 flex flex-col gap-5"
         onSubmit={form.handleSubmit((input) => login.mutate(input))}

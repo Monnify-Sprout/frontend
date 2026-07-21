@@ -153,6 +153,31 @@ function VerificationForm({
           onSubmit={form.handleSubmit((input) => verify.mutate(input))}
           noValidate
         >
+          {process.env.NEXT_PUBLIC_DEMO_MODE === 'true' && (
+            <div className="flex flex-col gap-2 rounded-lg border border-dashed border-brand/40 bg-brand/5 p-3 text-sm">
+              <p className="font-medium text-foreground">Demo mode</p>
+              <p className="text-muted-foreground">
+                No real BVN/NIN is checked here. Any 11-digit number verifies (one
+                ending in 0000 fails, to show that path), and the settlement
+                account can be anything. Fill sample details to skip ahead.
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="self-start"
+                onClick={() => {
+                  form.setValue('id_number', '22212345678');
+                  form.setValue('settlement_bank_code', BANKS[0]?.code ?? '');
+                  form.setValue('settlement_account_number', '0123456789');
+                  form.setValue('settlement_account_name', 'Demo Merchant');
+                }}
+              >
+                Fill demo details
+              </Button>
+            </div>
+          )}
+
           <Field>
             <Label>Identity type</Label>
             <div className="grid grid-cols-2 gap-2">

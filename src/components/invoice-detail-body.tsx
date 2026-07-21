@@ -1,4 +1,5 @@
 import { InvoiceShare } from '@/components/invoice-share';
+import { SimulatePayment } from '@/components/simulate-payment';
 import {
   Card,
   CardContent,
@@ -104,7 +105,12 @@ export function InvoiceDetailBody({
               <dd>{invoice.due_date ? formatDate(invoice.due_date) : 'None'}</dd>
             </div>
           </dl>
-          {invoice.status === 'pending' && <InvoiceShare invoice={invoice} />}
+          {invoice.status === 'pending' && (
+            <>
+              <InvoiceShare invoice={invoice} />
+              <SimulatePayment invoiceId={invoice.id} />
+            </>
+          )}
         </CardContent>
       </Card>
 

@@ -139,6 +139,13 @@ export const invoiceDetailResponseSchema = z.object({
   payment: paymentSchema.nullable(),
 });
 
+// The mock-only "Simulate a payment" result (extra keys are ignored). Mirrors
+// SimulateInvoicePaymentResult in the backend invoice service.
+export const simulateInvoicePaymentResponseSchema = z.object({
+  outcome: z.string(),
+  amount: z.number(),
+});
+
 // Mirrors backend src/modules/invoices/public.routes.ts: the safe buyer-facing
 // subset. `notes`, customer phone/email, and settlement figures are withheld.
 // Payment channels are null unless the invoice is still payable.
