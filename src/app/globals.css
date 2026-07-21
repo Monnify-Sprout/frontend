@@ -138,4 +138,16 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 dropped v3's `cursor: pointer` on buttons, so controls fell back
+     to the browser arrow while links and our clickable table rows stayed a
+     pointer - the cursor flipped as you crossed between them. Put it back for
+     every interactive control. Disabled ones are excluded so
+     `disabled:cursor-not-allowed` still wins. */
+  button:not(:disabled),
+  [role='button']:not(:disabled),
+  select:not(:disabled),
+  input[type='checkbox']:not(:disabled),
+  input[type='radio']:not(:disabled) {
+    @apply cursor-pointer;
+  }
 }
