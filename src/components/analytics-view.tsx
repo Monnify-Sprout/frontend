@@ -281,7 +281,15 @@ function FunnelCard({ funnel }: { funnel: NonNullable<AnalyticsResponse['funnel'
   );
 }
 
-export function AnalyticsView({ data }: { data: AnalyticsResponse }) {
+export function AnalyticsView({
+  data,
+  hideByStream = false,
+}: {
+  data: AnalyticsResponse;
+  // Phase 15: when analytics is scoped to a single stream ("This stream") the
+  // "By stream" breakdown is redundant (one row), so the page hides it there.
+  hideByStream?: boolean;
+}) {
   const { totals, funnel } = data;
   const isMerchant = data.scope.type === 'merchant';
 
@@ -407,7 +415,7 @@ export function AnalyticsView({ data }: { data: AnalyticsResponse }) {
             rows={linkRows}
           />
         )}
-        {streamsInUse && streamRows && (
+        {!hideByStream && streamsInUse && streamRows && (
           <BreakdownCard
             title="By stream"
             description="Where your sales come from"

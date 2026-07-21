@@ -28,6 +28,7 @@ import {
 } from '@/lib/schemas';
 import { cn, rowActivate } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { useStreamStore } from '@/store/stream';
 
 // Non-active merchants can't collect yet: link creation stays locked until
 // verification completes, exactly like invoices.
@@ -92,6 +93,8 @@ function SummaryCards({ summary }: { summary: LinkStatusSummary }) {
 export default function PaymentLinksPage() {
   const router = useRouter();
   const { merchant: cached, setMerchant } = useAuthStore();
+  // Phase 15: the links list + status cards are scoped to the current stream.
+  const activeStreamId = useStreamStore((s) => s.activeStreamId);
 
   const me = useQuery({
     queryKey: ['me'],
@@ -106,7 +109,7 @@ export default function PaymentLinksPage() {
   const active = merchant?.status === 'active';
 
   const links = useQuery({
-    queryKey: ['payment-links'],
+    queryKey: ['payment-links', 'list', activeStreamId],
     queryFn: async () => {
       const res = await api.get('/api/payment-links');
       return listPaymentLinksResponseSchema.parse(res.data);

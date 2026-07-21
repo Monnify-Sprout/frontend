@@ -10,7 +10,6 @@ import { Controller, useForm, useWatch } from 'react-hook-form';
 import { z } from 'zod';
 
 import { LinkShare } from '@/components/link-share';
-import { StreamPicker } from '@/components/stream-picker';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -94,7 +93,6 @@ export default function NewPaymentLinkPage() {
       mode: 'fixed',
       amount: '',
       category_id: '',
-      stream_id: '',
     },
   });
 
@@ -106,10 +104,6 @@ export default function NewPaymentLinkPage() {
     },
   });
   const selectedCategoryId = useWatch({ control: form.control, name: 'category_id' });
-  // z.preprocess types its input as {}; the field only ever holds a string.
-  const selectedStreamId = useWatch({ control: form.control, name: 'stream_id' }) as
-    | string
-    | undefined;
   const mode = useWatch({ control: form.control, name: 'mode' });
 
   const create = useMutation({
@@ -120,7 +114,7 @@ export default function NewPaymentLinkPage() {
         // A buyer-entered link omits amount; a fixed link sends it.
         amount: input.mode === 'fixed' ? input.amount : undefined,
         category_id: input.category_id || undefined,
-        stream_id: input.stream_id || undefined,
+        // Phase 15: auto-assigned to the current workspace stream server-side.
       };
       const res = await api.post('/api/payment-links', payload);
       return createPaymentLinkResponseSchema.parse(res.data).link;
@@ -317,11 +311,6 @@ export default function NewPaymentLinkPage() {
                   </p>
                 )}
               </Field>
-
-              <StreamPicker
-                value={selectedStreamId || undefined}
-                onChange={(id) => form.setValue('stream_id', id)}
-              />
 
               {create.isError && (
                 <p role="alert" className="text-sm text-destructive">

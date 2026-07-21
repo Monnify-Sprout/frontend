@@ -10,7 +10,6 @@ import { Controller, useForm, useWatch, type SubmitErrorHandler } from 'react-ho
 import { z } from 'zod';
 
 import { InvoiceShare } from '@/components/invoice-share';
-import { StreamPicker } from '@/components/stream-picker';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -109,8 +108,10 @@ export default function NewInvoicePage() {
   const { merchant, hydrated } = useAuthStore();
   const [result, setResult] = useState<CreateResult | null>(null);
 
-  // PREVIEW toggle state + the disclosure open/closed state.
-  const [variant, setVariant] = useState<Variant>('lean');
+  // PREVIEW toggle state + the disclosure open/closed state. The layout switcher
+  // is commented out below (the 'lean' layout was chosen), so the setter is
+  // unused; re-add it there if the A/B toggle is ever restored.
+  const [variant] = useState<Variant>('lean');
   const [showMore, setShowMore] = useState(false);
 
   // Non-active merchants cannot reach invoice creation (Phase 6 acceptance);
@@ -134,7 +135,6 @@ export default function NewInvoicePage() {
       amount: '',
       due_date: '',
       category_id: '',
-      stream_id: '',
     },
   });
 
@@ -148,8 +148,6 @@ export default function NewInvoicePage() {
   });
   const values = useWatch({ control: form.control });
   const selectedCategoryId = values.category_id;
-  // z.preprocess types its input as {}; the field only ever holds a string.
-  const selectedStreamId = values.stream_id as string | undefined;
 
   // Platform picker for the social handle. `platformChoice` is the selected pill
   // ('' | a known key | 'other'); the value actually stored in the form field is
@@ -188,7 +186,8 @@ export default function NewInvoicePage() {
         amount: input.amount,
         due_date: input.due_date || undefined,
         category_id: input.category_id || undefined,
-        stream_id: input.stream_id || undefined,
+        // Phase 15: no stream picker - the invoice is auto-assigned to the
+        // current workspace stream server-side (via the X-Stream-Id header).
       };
       const res = await api.post('/api/invoices', payload);
       return createInvoiceResponseSchema.parse(res.data);
@@ -214,8 +213,8 @@ export default function NewInvoicePage() {
   ] as const;
   const collapsedFields =
     variant === 'lean'
-      ? ([...leanContactFields, 'notes', 'due_date', 'category_id', 'stream_id'] as const)
-      : (['notes', 'due_date', 'category_id', 'stream_id'] as const);
+      ? ([...leanContactFields, 'notes', 'due_date', 'category_id'] as const)
+      : (['notes', 'due_date', 'category_id'] as const);
 
   // A small "N added" hint on the disclosure header so collapsed data is never
   // invisible. Counts the optional fields that currently hold a value.
@@ -603,10 +602,6 @@ export default function NewInvoicePage() {
                       </div>
                     )}
                     {categoryField}
-                    <StreamPicker
-                      value={selectedStreamId || undefined}
-                      onChange={(id) => form.setValue('stream_id', id)}
-                    />
                     {dueDateField}
                     {notesField}
                   </div>

@@ -29,6 +29,7 @@ import {
 } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { useStreamStore } from '@/store/stream';
 
 function StatusBadge({ merchant }: { merchant: Merchant }) {
   const map = {
@@ -99,6 +100,8 @@ function StatCard({
 
 export default function DashboardPage() {
   const { merchant: cached, setMerchant } = useAuthStore();
+  // Phase 15: dashboard invoices are scoped to the current workspace stream.
+  const activeStreamId = useStreamStore((s) => s.activeStreamId);
 
   // Revalidate the session's merchant on load; the store keeps the last copy
   // for instant paint.
@@ -113,7 +116,7 @@ export default function DashboardPage() {
   });
 
   const invoices = useQuery({
-    queryKey: ['invoices'],
+    queryKey: ['invoices', 'list', activeStreamId],
     queryFn: async () => {
       const res = await api.get('/api/invoices');
       return listInvoicesResponseSchema.parse(res.data).invoices;

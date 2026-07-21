@@ -15,6 +15,7 @@ import {
 import { Field, FieldError } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { MAX_STREAMS } from '@/components/stream-switcher';
 import { api, apiErrorMessage } from '@/lib/api';
 import { BANKS, bankName } from '@/lib/banks';
 import { formatNaira } from '@/lib/format';
@@ -26,6 +27,7 @@ import {
   type StreamForm,
 } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
+import { useStreamStore } from '@/store/stream';
 
 // What the API receives from the form (the form-only `routed` flag resolved
 // into the optional settlement fields, plus clear_settlement on edits).
@@ -118,7 +120,9 @@ function StreamEditor({
         />
       </Field>
 
-      <label className="flex items-start gap-2.5 text-sm">
+      {/* Clicking anywhere in this label toggles the checkbox, so the whole
+          block reads as interactive. */}
+      <label className="flex cursor-pointer items-start gap-2.5 text-sm">
         <input
           type="checkbox"
           checked={routed}
@@ -211,6 +215,9 @@ function StreamRow({
   const queryClient = useQueryClient();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const archived = stream.status === 'archived';
+  const activeStreamId = useStreamStore((s) => s.activeStreamId);
+  const setActiveStream = useStreamStore((s) => s.setActiveStream);
+  const isCurrent = stream.id === activeStreamId;
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ['streams'] });
@@ -250,6 +257,16 @@ function StreamRow({
         <div className="min-w-0">
           <p className="flex items-center gap-2 font-medium">
             <span className="truncate">{stream.name}</span>
+            {stream.is_default && (
+              <span className="rounded-full bg-brand/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
+                Main
+              </span>
+            )}
+            {isCurrent && !archived && (
+              <span className="rounded-full border border-brand/40 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand">
+                Current
+              </span>
+            )}
             {archived && (
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 Archived
@@ -290,20 +307,37 @@ function StreamRow({
             </>
           ) : (
             <>
+              {/* Switch the workspace to this stream (the header switcher does the
+                  same). Not offered for an archived stream - you can't be "on"
+                  one - or the stream you are already on. */}
+              {!archived && !isCurrent && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-brand/40 text-brand hover:bg-brand/10"
+                  onClick={() => setActiveStream(stream.id)}
+                >
+                  Switch to
+                </Button>
+              )}
               {!archived && (
                 <Button variant="outline" size="sm" onClick={onEdit}>
                   Edit
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                disabled={setStatus.isPending}
-                onClick={() => setStatus.mutate(archived ? 'active' : 'archived')}
-              >
-                {archived ? 'Restore' : 'Archive'}
-              </Button>
-              {unused && (
+              {/* The default "Main" stream is always active and cannot be
+                  archived or deleted (the backend rejects both). */}
+              {!stream.is_default && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={setStatus.isPending}
+                  onClick={() => setStatus.mutate(archived ? 'active' : 'archived')}
+                >
+                  {archived ? 'Restore' : 'Archive'}
+                </Button>
+              )}
+              {!stream.is_default && unused && (
                 <Button variant="ghost" size="sm" onClick={() => setConfirmingDelete(true)}>
                   Delete
                 </Button>
@@ -370,9 +404,10 @@ export default function StreamsPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Streams</h1>
         <p className="text-sm text-muted-foreground">
-          Track where each sale comes from - a shop branch, a market stall, your
-          Instagram page, a sales rep, a pop-up. A stream can even settle to its own
-          bank account.
+          A stream is a workspace for part of your business - your main account plus,
+          if you split things up, a branch, a second brand, or a pop-up (each can
+          settle to its own bank account). Switch between them from the header; your
+          invoices, links, dashboard and analytics all follow the stream you are on.
         </p>
       </div>
 
@@ -428,27 +463,39 @@ export default function StreamsPage() {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Waypoints className="size-5 text-brand" />
-            <CardTitle className="text-base">New stream</CardTitle>
-          </div>
-          <CardDescription>
-            Name it after the place, page, or person the sales come through.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {/* key remounts the editor (clearing it) after each successful create. */}
-          <StreamEditor
-            key={create.isSuccess ? create.data?.id : 'new'}
-            submitLabel="Add stream"
-            pending={create.isPending}
-            error={create.isError ? apiErrorMessage(create.error) : undefined}
-            onSubmit={(input) => create.mutate(input)}
-          />
-        </CardContent>
-      </Card>
+      {list.length >= MAX_STREAMS ? (
+        <Card>
+          <CardContent className="py-6 text-center text-sm text-muted-foreground">
+            You have reached the limit of {MAX_STREAMS} streams. Archive or delete one
+            to add another. Create a stream only when you want a separate account for
+            part of your business.
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Waypoints className="size-5 text-brand" />
+              <CardTitle className="text-base">New stream</CardTitle>
+            </div>
+            <CardDescription>
+              Create a stream for a separate part of your business (a branch, a
+              second brand, a pop-up) - especially one that settles to its own bank
+              account. Up to {MAX_STREAMS} in total.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* key remounts the editor (clearing it) after each successful create. */}
+            <StreamEditor
+              key={create.isSuccess ? create.data?.id : 'new'}
+              submitLabel="Add stream"
+              pending={create.isPending}
+              error={create.isError ? apiErrorMessage(create.error) : undefined}
+              onSubmit={(input) => create.mutate(input)}
+            />
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

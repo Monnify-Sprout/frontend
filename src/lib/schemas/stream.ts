@@ -18,6 +18,9 @@ export const streamSchema = z.object({
   settlement_account_name: z.string().nullable(),
   sub_account_code: z.string().nullable(),
   status: streamStatusSchema,
+  // Phase 14: the merchant's default "<business> - Main" workspace. Exactly one
+  // per merchant; it cannot be archived or deleted, and is the fallback scope.
+  is_default: z.boolean(),
   created_at: z.string(),
   updated_at: z.string(),
   // Rollups from the list endpoint; the create/update responses omit them.

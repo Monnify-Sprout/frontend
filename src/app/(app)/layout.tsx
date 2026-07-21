@@ -15,9 +15,11 @@ import { usePathname, useRouter } from 'next/navigation';
 
 import { AuthGuard } from '@/components/auth-guard';
 import { Logo } from '@/components/logo';
+import { StreamSwitcher } from '@/components/stream-switcher';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { useStreamStore } from '@/store/stream';
 
 const NAV = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, ready: true },
@@ -35,7 +37,8 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
   const router = useRouter();
   const pathname = usePathname();
   const queryClient = useQueryClient();
-  const { merchant, clear } = useAuthStore();
+  const { clear } = useAuthStore();
+  const clearStream = useStreamStore((s) => s.clear);
   const isActive = (href: string) => pathname.startsWith(href);
 
   return (
@@ -82,12 +85,9 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 md:px-6">
-            <div className="min-w-0 md:hidden">
-              <Logo compact />
-            </div>
-            <div className="hidden min-w-0 md:block">
-              <p className="truncate text-sm font-medium">{merchant?.business_name}</p>
-              <p className="truncate text-xs text-muted-foreground">{merchant?.email}</p>
+            <div className="flex min-w-0 items-center gap-3">
+              <Logo compact className="md:hidden" />
+              <StreamSwitcher />
             </div>
             <Button
               variant="ghost"
@@ -97,6 +97,7 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
                 // sees the previous session's data (invoices, analytics, etc.).
                 queryClient.clear();
                 clear();
+                clearStream();
                 router.replace('/login');
               }}
             >

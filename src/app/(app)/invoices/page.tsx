@@ -34,11 +34,11 @@ import {
 import {
   listCategoriesResponseSchema,
   listInvoicesResponseSchema,
-  listStreamsResponseSchema,
   meResponseSchema,
 } from '@/lib/schemas';
 import { cn, rowActivate } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth';
+import { useStreamStore } from '@/store/stream';
 
 // Shown to merchants who are not Active yet: invoice creation stays out of
 // reach until verification completes (Phase 6 acceptance).
@@ -68,6 +68,9 @@ function LockedState() {
 
 export default function InvoicesPage() {
   const { merchant: cached, setMerchant } = useAuthStore();
+  // Phase 15: the list is scoped to the current workspace stream, so its query
+  // key carries the active stream id - switching streams refetches automatically.
+  const activeStreamId = useStreamStore((s) => s.activeStreamId);
 
   const me = useQuery({
     queryKey: ['me'],
@@ -82,7 +85,7 @@ export default function InvoicesPage() {
   const active = merchant?.status === 'active';
 
   const invoices = useQuery({
-    queryKey: ['invoices'],
+    queryKey: ['invoices', 'list', activeStreamId],
     queryFn: async () => {
       const res = await api.get('/api/invoices');
       return listInvoicesResponseSchema.parse(res.data).invoices;
@@ -95,15 +98,6 @@ export default function InvoicesPage() {
     queryFn: async () => {
       const res = await api.get('/api/categories');
       return listCategoriesResponseSchema.parse(res.data).categories;
-    },
-    enabled: active,
-  });
-
-  const streams = useQuery({
-    queryKey: ['streams'],
-    queryFn: async () => {
-      const res = await api.get('/api/streams');
-      return listStreamsResponseSchema.parse(res.data).streams;
     },
     enabled: active,
   });
@@ -218,7 +212,6 @@ export default function InvoicesPage() {
                 value={filters}
                 onApply={setFilters}
                 categories={categories.data ?? []}
-                streams={streams.data ?? []}
               />
               {narrowed && (
                 <Button

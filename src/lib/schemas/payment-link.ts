@@ -127,7 +127,7 @@ export const createPaymentLinkFormSchema = z
       z.coerce.number().positive('Amount must be greater than 0').max(1_000_000_000),
     ),
     category_id: optional(z.string().uuid('Invalid category')),
-    stream_id: optional(z.string().uuid('Invalid stream')),
+    // Phase 15: no stream_id on the form - auto-assigned to the current stream.
   })
   .superRefine((v, ctx) => {
     if (v.mode === 'fixed' && v.amount == null) {

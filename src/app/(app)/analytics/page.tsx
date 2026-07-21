@@ -12,17 +12,26 @@ import { api } from '@/lib/api';
 import {
   analyticsResponseSchema,
   listConnectedAccountsResponseSchema,
+  listStreamsResponseSchema,
 } from '@/lib/schemas';
 import { cn } from '@/lib/utils';
+import { useStreamStore } from '@/store/stream';
 
 const WINDOWS = [7, 30, 90] as const;
 
 // 'merchant' = the merchant's own Sprout sales; otherwise a connected account id.
 type Scope = { kind: 'merchant' } | { kind: 'connected'; id: string; label: string };
 
+// Phase 15: for the merchant's own sales, analytics can show just the current
+// workspace stream or every stream aggregated. Connected accounts are never
+// stream-scoped.
+type StreamMode = 'this' | 'all';
+
 export default function AnalyticsPage() {
   const [scope, setScope] = useState<Scope>({ kind: 'merchant' });
   const [days, setDays] = useState<number>(30);
+  const [streamMode, setStreamMode] = useState<StreamMode>('this');
+  const activeStreamId = useStreamStore((s) => s.activeStreamId);
 
   const connected = useQuery({
     queryKey: ['connected-accounts'],
@@ -32,13 +41,36 @@ export default function AnalyticsPage() {
     },
   });
 
+  const streams = useQuery({
+    queryKey: ['streams'],
+    queryFn: async () => {
+      const res = await api.get('/api/streams');
+      return listStreamsResponseSchema.parse(res.data).streams;
+    },
+  });
+
   const connectedId = scope.kind === 'connected' ? scope.id : null;
+  const isMerchant = scope.kind === 'merchant';
+  // The stream toggle only makes sense for the merchant's own sales, and only
+  // once a second stream exists (with one stream "This" and "All" are identical).
+  const multiStream = (streams.data?.length ?? 0) > 1;
+  const showStreamToggle = isMerchant && multiStream;
+  // Scope to the active stream only when in merchant + "this" mode with a
+  // resolved stream; otherwise aggregate every stream.
+  const scopedStreamId =
+    isMerchant && streamMode === 'this' && multiStream ? activeStreamId : null;
 
   const analytics = useQuery({
-    queryKey: ['analytics', connectedId ?? 'merchant', days],
+    queryKey: [
+      'analytics',
+      connectedId ?? 'merchant',
+      days,
+      connectedId ? null : (scopedStreamId ?? 'all'),
+    ],
     queryFn: async () => {
       const params = new URLSearchParams({ days: String(days) });
       if (connectedId) params.set('connected_account_id', connectedId);
+      else if (scopedStreamId) params.set('stream_id', scopedStreamId);
       const res = await api.get(`/api/analytics?${params.toString()}`);
       return analyticsResponseSchema.parse(res.data);
     },
@@ -87,6 +119,41 @@ export default function AnalyticsPage() {
         />
       </div>
 
+      {/* Stream scope (merchant, multi-stream only): this stream vs all. */}
+      {showStreamToggle && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Streams
+          </span>
+          <button
+            type="button"
+            onClick={() => setStreamMode('this')}
+            aria-pressed={streamMode === 'this'}
+            className={cn(
+              'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+              streamMode === 'this'
+                ? 'border-brand bg-brand/10 text-brand'
+                : 'border-input text-muted-foreground hover:bg-muted',
+            )}
+          >
+            This stream
+          </button>
+          <button
+            type="button"
+            onClick={() => setStreamMode('all')}
+            aria-pressed={streamMode === 'all'}
+            className={cn(
+              'rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors',
+              streamMode === 'all'
+                ? 'border-brand bg-brand/10 text-brand'
+                : 'border-input text-muted-foreground hover:bg-muted',
+            )}
+          >
+            All streams
+          </button>
+        </div>
+      )}
+
       {/* Time window. */}
       <div className="flex gap-2">
         {WINDOWS.map((w) => (
@@ -116,7 +183,10 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
       ) : (
-        <AnalyticsView data={analytics.data} />
+        <AnalyticsView
+          data={analytics.data}
+          hideByStream={Boolean(scopedStreamId)}
+        />
       )}
     </div>
   );

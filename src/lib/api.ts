@@ -2,6 +2,7 @@ import axios from 'axios';
 
 import { apiErrorSchema } from '@/lib/schemas';
 import { useAuthStore } from '@/store/auth';
+import { useStreamStore } from '@/store/stream';
 
 // Same-origin by default - next.config.ts rewrites /api/* to the backend, so no
 // CORS is involved. Point NEXT_PUBLIC_API_BASE_URL elsewhere to skip the proxy.
@@ -14,6 +15,12 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const token = useAuthStore.getState().token;
   if (token) config.headers.Authorization = `Bearer ${token}`;
+  // Phase 14/15: scope every request to the current workspace stream. The
+  // backend falls back to the merchant's default when this is absent, so a
+  // request before the switcher has resolved a stream still works. Analytics
+  // reads an explicit ?stream_id query param instead, and ignores this header.
+  const streamId = useStreamStore.getState().activeStreamId;
+  if (streamId) config.headers['X-Stream-Id'] = streamId;
   return config;
 });
 

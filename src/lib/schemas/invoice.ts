@@ -102,8 +102,8 @@ export const createInvoiceInputSchema = z
     ),
     // Optional merchant category (Phase 11); the picker sends the category id.
     category_id: optional(z.string().uuid('Invalid category')),
-    // Optional revenue stream (Phase 13); the picker sends the stream id.
-    stream_id: optional(z.string().uuid('Invalid stream')),
+    // Phase 15: no stream_id on the form - a new invoice is auto-assigned to the
+    // current workspace stream server-side.
   })
   .refine(
     (v) =>
